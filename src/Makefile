@@ -49,9 +49,9 @@ distclean: clean
 
 install: $(TARGETS)
 	$(MKDIR) $(DESTDIR)$(BINDIR)
-	$(INSTALL) -m 0755 -- Probe $(DESTDIR)$(BINDIR)/Probe
+	$(INSTALL) -m 0755 Probe $(DESTDIR)$(BINDIR)/Probe
 	$(MKDIR) $(DESTDIR)$(BINDIR)
-	$(INSTALL) -m 0755 -- DaMon $(DESTDIR)$(BINDIR)/DaMon
+	$(INSTALL) -m 0755 DaMon $(DESTDIR)$(BINDIR)/DaMon
 
 uninstall:
 	$(RM) -- $(DESTDIR)$(BINDIR)/Probe
