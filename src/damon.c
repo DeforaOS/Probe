@@ -1,5 +1,5 @@
 /* $Id$ */
-/* Copyright (c) 2011 Pierre Pronchery <khorben@defora.org> */
+/* Copyright (c) 2005-2014 Pierre Pronchery <khorben@defora.org> */
 /* This file is part of DeforaOS Network Probe */
 /* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,10 +30,16 @@
 #include "../config.h"
 
 #ifndef PREFIX
-# define PREFIX "/usr/local"
+# define PREFIX		"/usr/local"
 #endif
-#ifndef ETCDIR
-# define ETCDIR PREFIX "/etc"
+#ifndef SYSCONFDIR
+# define SYSCONFDIR	PREFIX "/etc"
+#endif
+#ifndef PROGNAME
+# define PROGNAME	"DaMon"
+#endif
+#ifndef RRDTOOL
+# define RRDTOOL	"rrdtool"
 #endif
 
 
@@ -63,7 +69,6 @@ struct _DaMon
 
 /* constants */
 #define DAMON_DEFAULT_REFRESH	10
-#define DAMON_PROGNAME		"DaMon"
 #define DAMON_SEP		'/'
 
 
@@ -84,7 +89,7 @@ static int _damon(char const * config)
 	if(_damon_init(&damon, config) != 0)
 		return 1;
 	if(event_loop(damon.event) != 0)
-		error_print(DAMON_PROGNAME);
+		error_print(PROGNAME);
 	_damon_destroy(&damon);
 	return 1;
 }
@@ -101,7 +106,7 @@ static int _damon_init(DaMon * damon, char const * filename)
 	if(_init_config(damon, filename) != 0)
 		return 1;
 	if((damon->event = event_new()) == NULL)
-		return error_print(DAMON_PROGNAME);
+		return error_print(PROGNAME);
 	_damon_refresh(damon);
 	tv.tv_sec = damon->refresh;
 	tv.tv_usec = 0;
@@ -127,10 +132,10 @@ static int _init_config(DaMon * damon, char const * filename)
 	damon->hosts = NULL;
 	damon->hosts_cnt = 0;
 	if(filename == NULL)
-		filename = ETCDIR "/" DAMON_PROGNAME ".conf";
+		filename = SYSCONFDIR "/" PROGNAME ".conf";
 	if(config_load(config, filename) != 0)
 	{
-		error_print(DAMON_PROGNAME);
+		error_print(PROGNAME);
 		config_delete(config);
 		return 1;
 	}
@@ -324,9 +329,9 @@ static AppClient * _refresh_connect(Host * host, Event * event)
 {
 	if(setenv("APPSERVER_Probe", host->hostname, 1) != 0)
 		return NULL;
-	if((host->appclient = appclient_new_event("Probe", event))
+	if((host->appclient = appclient_new_event(NULL, "Probe", NULL, event))
 			== NULL)
-		error_print(DAMON_PROGNAME);
+		error_print(PROGNAME);
 	return host->appclient;
 }
 
@@ -335,8 +340,8 @@ static int _refresh_uptime(AppClient * ac, Host * host, char * rrd)
 {
 	int32_t ret;
 
-	if(appclient_call(ac, &ret, "uptime") != 0)
-		return error_print(DAMON_PROGNAME);
+	if(appclient_call(ac, (void **)&ret, "uptime") != 0)
+		return error_print(PROGNAME);
 	sprintf(rrd, "%s%c%s", host->hostname, DAMON_SEP, "uptime.rrd");
 	_rrd_update(host->damon, rrd, 1, ret);
 	return 0;
@@ -347,8 +352,9 @@ static int _refresh_load(AppClient * ac, Host * host, char * rrd)
 	int32_t res;
 	uint32_t load[3];
 
-	if(appclient_call(ac, &res, "load", &load[0], &load[1], &load[2]) != 0)
-		return error_print(DAMON_PROGNAME);
+	if(appclient_call(ac, (void **)&res, "load", &load[0], &load[1],
+				&load[2]) != 0)
+		return error_print(PROGNAME);
 	if(res != 0)
 		return 0;
 	sprintf(rrd, "%s%c%s", host->hostname, DAMON_SEP, "load.rrd");
@@ -360,7 +366,7 @@ static int _refresh_procs(AppClient * ac, Host * host, char * rrd)
 {
 	int32_t res;
 
-	if(appclient_call(ac, &res, "procs") != 0)
+	if(appclient_call(ac, (void **)&res, "procs") != 0)
 		return 1;
 	sprintf(rrd, "%s%c%s", host->hostname, DAMON_SEP, "procs.rrd");
 	_rrd_update(host->damon, rrd, 1, res);
@@ -372,8 +378,8 @@ static int _refresh_ram(AppClient * ac, Host * host, char * rrd)
 	int32_t res;
 	uint32_t ram[4];
 
-	if(appclient_call(ac, &res, "ram", &ram[0], &ram[1], &ram[2], &ram[3])
-			!= 0)
+	if(appclient_call(ac, (void **)&res, "ram", &ram[0], &ram[1], &ram[2],
+				&ram[3]) != 0)
 		return 1;
 	sprintf(rrd, "%s%c%s", host->hostname, DAMON_SEP, "ram.rrd");
 	_rrd_update(host->damon, rrd, 4, ram[0], ram[1], ram[2], ram[3]);
@@ -385,7 +391,7 @@ static int _refresh_swap(AppClient * ac, Host * host, char * rrd)
 	int32_t res;
 	uint32_t swap[2];
 
-	if(appclient_call(ac, &res, "swap", &swap[0], &swap[1]) != 0)
+	if(appclient_call(ac, (void **)&res, "swap", &swap[0], &swap[1]) != 0)
 		return 1;
 	sprintf(rrd, "%s%c%s", host->hostname, DAMON_SEP, "swap.rrd");
 	_rrd_update(host->damon, rrd, 2, swap[0], swap[1]);
@@ -396,7 +402,7 @@ static int _refresh_users(AppClient * ac, Host * host, char * rrd)
 {
 	int32_t res;
 
-	if(appclient_call(ac, &res, "users") != 0)
+	if(appclient_call(ac, (void **)&res, "users") != 0)
 		return 1;
 	sprintf(rrd, "%s%c%s", host->hostname, DAMON_SEP, "users.rrd");
 	_rrd_update(host->damon, rrd, 1, res);
@@ -422,8 +428,9 @@ static int _ifaces_if(AppClient * ac, Host * host, char * rrd,
 {
 	int32_t res[2];
 
-	if(appclient_call(ac, &res[0], "ifrxbytes", iface) != 0
-			|| appclient_call(ac, &res[1], "iftxbytes", iface) != 0)
+	if(appclient_call(ac, (void **)&res[0], "ifrxbytes", iface) != 0
+			|| appclient_call(ac, (void **)&res[1], "iftxbytes",
+				iface) != 0)
 		return 1;
 	sprintf(rrd, "%s%c%s%s", host->hostname, DAMON_SEP, iface, ".rrd");
 	_rrd_update(host->damon, rrd, 2, res[0], res[1]);
@@ -447,8 +454,8 @@ static int _vols_vol(AppClient * ac, Host * host, char * rrd, char * vol)
 {
 	int32_t res[2];
 
-	if(appclient_call(ac, &res[0], "voltotal", vol) != 0
-			|| appclient_call(ac, &res[1], "volfree", vol)
+	if(appclient_call(ac, (void **)&res[0], "voltotal", vol) != 0
+			|| appclient_call(ac, (void **)&res[1], "volfree", vol)
 			!= 0)
 		return 1;
 	sprintf(rrd, "%s%s%s", host->hostname, vol, ".rrd"); /* FIXME */
@@ -459,7 +466,7 @@ static int _vols_vol(AppClient * ac, Host * host, char * rrd, char * vol)
 static int _exec(char * argv[]);
 static int _rrd_update(DaMon * damon, char const * filename, int args_cnt, ...)
 {
-	char * argv[] = { "rrdtool", "update", NULL, NULL, NULL };
+	char * argv[] = { RRDTOOL, "update", NULL, NULL, NULL };
 	struct timeval tv;
 	int pos;
 	int i;
@@ -514,7 +521,7 @@ static int _exec(char * argv[])
 /* private */
 static int _damon_perror(char const * message, int ret)
 {
-	return error_set_print(DAMON_PROGNAME, ret, "%s%s%s\n",
+	return error_set_print(PROGNAME, ret, "%s%s%s\n",
 			message ? message : "",
 			message ? ": " : "", strerror(errno));
 }
@@ -523,7 +530,7 @@ static int _damon_perror(char const * message, int ret)
 /* usage */
 static int _usage(void)
 {
-	fputs("Usage: " DAMON_PROGNAME " [-f filename]\n"
+	fputs("Usage: " PROGNAME " [-f filename]\n"
 "  -f\tConfiguration file to load\n", stderr);
 	return 1;
 }

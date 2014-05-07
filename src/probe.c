@@ -1,5 +1,5 @@
 /* $Id$ */
-/* Copyright (c) 2011 Pierre Pronchery <khorben@defora.org> */
+/* Copyright (c) 2005-2014 Pierre Pronchery <khorben@defora.org> */
 /* This file is part of DeforaOS Network Probe */
 /* This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -28,6 +28,10 @@
 #include <System/App.h>
 #include "../data/Probe.h"
 #include "../config.h"
+
+#ifndef PROGNAME
+# define PROGNAME PACKAGE
+#endif
 
 
 #if defined(__linux__)
@@ -580,7 +584,7 @@ static int _volinfo_generic(struct volinfo ** dev)
 /* Probe */
 /* private */
 /* types */
-typedef struct _Probe
+typedef struct _App
 {
 	struct sysinfo sysinfo;
 	unsigned int users;
@@ -589,10 +593,6 @@ typedef struct _Probe
 	struct volinfo * volinfo;
 	unsigned int volinfo_cnt;
 } Probe;
-
-
-/* variables */
-Probe probe;
 
 
 /* prototypes */
@@ -605,6 +605,7 @@ static int _probe_timeout(Probe * probe);
 /* probe */
 static int _probe(AppServerOptions options)
 {
+	Probe probe;
 	AppServer * appserver;
 	Event * event;
 	struct timeval tv;
@@ -622,8 +623,8 @@ static int _probe(AppServerOptions options)
 		free(probe.volinfo);
 		return _probe_error(1);
 	}
-	if((appserver = appserver_new_event("Probe", options, event))
-			== NULL)
+	if((appserver = appserver_new_event(&probe, options, "Probe", NULL,
+					event)) == NULL)
 	{
 		free(probe.ifinfo);
 		free(probe.volinfo);
@@ -648,7 +649,7 @@ static int _probe(AppServerOptions options)
 /* probe_error */
 static int _probe_error(int ret)
 {
-	error_print(PACKAGE);
+	error_print(PROGNAME);
 	return ret;
 }
 
@@ -656,7 +657,7 @@ static int _probe_error(int ret)
 /* probe_perror */
 static int _probe_perror(char const * message, int ret)
 {
-	error_set_print(PACKAGE, ret, "%s%s%s", message ? message : "",
+	error_set_print(PROGNAME, ret, "%s%s%s", message ? message : "",
 			message ? ": " : "", strerror(errno));
 	return ret;
 }
@@ -689,156 +690,162 @@ static int _probe_timeout(Probe * probe)
 /* functions */
 /* AppInterface */
 /* Probe_uptime */
-uint32_t Probe_uptime(void)
+uint32_t Probe_uptime(Probe * probe, AppServerClient * asc)
 {
 #if defined(DEBUG)
-	printf("%s%ld%s", "Uptime: ", probe.sysinfo.uptime, "\n");
+	printf("%s%ld%s", "Uptime: ", probe->sysinfo.uptime, "\n");
 #endif
-	return probe.sysinfo.uptime;
+	return probe->sysinfo.uptime;
 }
 
 
 /* Probe_load */
-int32_t Probe_load(uint32_t * load1, uint32_t * load5, uint32_t * load15)
+int32_t Probe_load(Probe * probe, AppServerClient * asc, uint32_t * load1,
+		uint32_t * load5, uint32_t * load15)
 {
 #if defined(DEBUG)
-	printf("%s%lu%s%lu%s%lu%s", "Load 1: ", probe.sysinfo.loads[0],
-			", Load 5: ", probe.sysinfo.loads[1],
-			", Load 15: ", probe.sysinfo.loads[2], "\n");
+	printf("%s%lu%s%lu%s%lu%s", "Load 1: ", probe->sysinfo.loads[0],
+			", Load 5: ", probe->sysinfo.loads[1],
+			", Load 15: ", probe->sysinfo.loads[2], "\n");
 #endif
-	*load1 = probe.sysinfo.loads[0];
-	*load5 = probe.sysinfo.loads[1];
-	*load15 = probe.sysinfo.loads[2];
+	*load1 = probe->sysinfo.loads[0];
+	*load5 = probe->sysinfo.loads[1];
+	*load15 = probe->sysinfo.loads[2];
 	return 0;
 }
 
 
 /* Probe_ram */
-int32_t Probe_ram(uint32_t * total, uint32_t * free, uint32_t * shared,
-		uint32_t * buffer)
+int32_t Probe_ram(Probe * probe, AppServerClient * asc, uint32_t * total,
+		uint32_t * free, uint32_t * shared, uint32_t * buffer)
 {
 #if defined(DEBUG)
 	printf("%s%lu%s%lu%s%lu%s%lu%s",
-			"Total RAM: ", probe.sysinfo.totalram,
-			", Free RAM: ", probe.sysinfo.freeram,
-			", Shared RAM: ", probe.sysinfo.sharedram,
-			", Buffered RAM: ", probe.sysinfo.bufferram, "\n");
+			"Total RAM: ", probe->sysinfo.totalram,
+			", Free RAM: ", probe->sysinfo.freeram,
+			", Shared RAM: ", probe->sysinfo.sharedram,
+			", Buffered RAM: ", probe->sysinfo.bufferram, "\n");
 #endif
-	*total = probe.sysinfo.totalram;
-	*free = probe.sysinfo.freeram;
-	*shared = probe.sysinfo.sharedram;
-	*buffer = probe.sysinfo.bufferram;
+	*total = probe->sysinfo.totalram;
+	*free = probe->sysinfo.freeram;
+	*shared = probe->sysinfo.sharedram;
+	*buffer = probe->sysinfo.bufferram;
 	return 0;
 }
 
 
 /* Probe_swap */
-int32_t Probe_swap(uint32_t * total, uint32_t * free)
+int32_t Probe_swap(Probe * probe, AppServerClient * asc, uint32_t * total,
+		uint32_t * free)
 {
 #if defined(DEBUG)
-	printf("%s%lu%s", "Total swap: ", probe.sysinfo.totalswap, "\n");
-	printf("%s%lu%s", "Free swap: ", probe.sysinfo.freeswap, "\n");
+	printf("%s%lu%s", "Total swap: ", probe->sysinfo.totalswap, "\n");
+	printf("%s%lu%s", "Free swap: ", probe->sysinfo.freeswap, "\n");
 #endif
-	*total = probe.sysinfo.totalswap;
-	*free = probe.sysinfo.freeswap;
+	*total = probe->sysinfo.totalswap;
+	*free = probe->sysinfo.freeswap;
 	return 0;
 }
 
 
 /* Probe_procs */
-uint32_t Probe_procs(void)
+uint32_t Probe_procs(Probe * probe, AppServerClient * asc)
 {
 #if defined(DEBUG)
-	printf("%s%u%s", "Procs: ", probe.sysinfo.procs, "\n");
+	printf("%s%u%s", "Procs: ", probe->sysinfo.procs, "\n");
 #endif
-	return probe.sysinfo.procs;
+	return probe->sysinfo.procs;
 }
 
 
 /* Probe_users */
-uint32_t Probe_users(void)
+uint32_t Probe_users(Probe * probe, AppServerClient * asc)
 {
 #if defined(DEBUG)
-	printf("%s%u%s", "Users: ", probe.users, "\n");
+	printf("%s%u%s", "Users: ", probe->users, "\n");
 #endif
-	return probe.users;
+	return probe->users;
 }
 
 
 /* Probe_ifrxbytes */
-uint32_t Probe_ifrxbytes(String const * dev)
+uint32_t Probe_ifrxbytes(Probe * probe, AppServerClient * asc,
+		String const * dev)
 {
 	unsigned int i;
 
-	for(i = 0; i < probe.ifinfo_cnt
-			&& string_compare(probe.ifinfo[i].name, dev) != 0; i++);
-	if(i == probe.ifinfo_cnt)
+	for(i = 0; i < probe->ifinfo_cnt
+			&& string_compare(probe->ifinfo[i].name, dev) != 0; i++);
+	if(i == probe->ifinfo_cnt)
 		return -1;
 #if defined(DEBUG)
-	printf("%s%s%s%u%s", "Interface ", probe.ifinfo[i].name, " RX: ",
-			probe.ifinfo[i].ibytes, "\n");
+	printf("%s%s%s%u%s", "Interface ", probe->ifinfo[i].name, " RX: ",
+			probe->ifinfo[i].ibytes, "\n");
 #endif
-	return probe.ifinfo[i].ibytes;
+	return probe->ifinfo[i].ibytes;
 }
 
 
 /* Probe_iftxbytes */
-uint32_t Probe_iftxbytes(String const * dev)
+uint32_t Probe_iftxbytes(Probe * probe, AppServerClient * asc,
+		String const * dev)
 {
 	unsigned int i;
 
-	for(i = 0; i < probe.ifinfo_cnt
-			&& string_compare(probe.ifinfo[i].name, dev) != 0; i++);
-	if(i == probe.ifinfo_cnt)
+	for(i = 0; i < probe->ifinfo_cnt
+			&& string_compare(probe->ifinfo[i].name, dev) != 0; i++);
+	if(i == probe->ifinfo_cnt)
 		return -1;
 #if defined(DEBUG)
-	printf("%s%s%s%u%s", "Interface ", probe.ifinfo[i].name, " TX: ",
-			probe.ifinfo[i].obytes, "\n");
+	printf("%s%s%s%u%s", "Interface ", probe->ifinfo[i].name, " TX: ",
+			probe->ifinfo[i].obytes, "\n");
 #endif
-	return probe.ifinfo[i].obytes;
+	return probe->ifinfo[i].obytes;
 }
 
 
 /* Probe_voltotal */
-uint32_t Probe_voltotal(String const * volume)
+uint32_t Probe_voltotal(Probe * probe, AppServerClient * asc,
+		String const * volume)
 {
 	unsigned int i;
 
-	for(i = 0; i < probe.volinfo_cnt
-			&& string_compare(probe.volinfo[i].name, volume) != 0;
+	for(i = 0; i < probe->volinfo_cnt
+			&& string_compare(probe->volinfo[i].name, volume) != 0;
 			i++);
-	if(i == probe.volinfo_cnt)
+	if(i == probe->volinfo_cnt)
 		return -1;
 #if defined(DEBUG)
-	printf("%s%s%s%lu%s", "Volume ", probe.volinfo[i].name, " total: ",
-			probe.volinfo[i].total, "\n");
+	printf("%s%s%s%lu%s", "Volume ", probe->volinfo[i].name, " total: ",
+			probe->volinfo[i].total, "\n");
 #endif
-	return probe.volinfo[i].total * (probe.volinfo[i].block_size / 1024);
+	return probe->volinfo[i].total * (probe->volinfo[i].block_size / 1024);
 }
 
 
 /* Probe_volfree */
-uint32_t Probe_volfree(String const * volume)
+uint32_t Probe_volfree(Probe * probe, AppServerClient * asc,
+		String const * volume)
 {
 	unsigned int i;
 
-	for(i = 0; i < probe.volinfo_cnt
-			&& string_compare(probe.volinfo[i].name, volume) != 0;
+	for(i = 0; i < probe->volinfo_cnt
+			&& string_compare(probe->volinfo[i].name, volume) != 0;
 			i++);
-	if(i == probe.volinfo_cnt)
+	if(i == probe->volinfo_cnt)
 		return -1;
 #if defined(DEBUG)
-	printf("%s%s%s%lu%s", "Volume ", probe.volinfo[i].name, " free: ",
-			probe.volinfo[i].free, "\n");
+	printf("%s%s%s%lu%s", "Volume ", probe->volinfo[i].name, " free: ",
+			probe->volinfo[i].free, "\n");
 #endif
-	return probe.volinfo[i].free * (probe.volinfo[i].block_size / 1024);
+	return probe->volinfo[i].free * (probe->volinfo[i].block_size / 1024);
 }
 
 
 /* usage */
 static int _usage(void)
 {
-	fputs("Usage: " PACKAGE " [-L|-R]\n", stderr);
+	fputs("Usage: " PROGNAME " [-R]\n", stderr);
 	return 1;
 }
 
@@ -847,16 +854,13 @@ static int _usage(void)
 int main(int argc, char * argv[])
 {
 	int o;
-	AppServerOptions options = ASO_LOCAL;
+	AppServerOptions options = 0;
 
-	while((o = getopt(argc, argv, "LR")) != -1)
+	while((o = getopt(argc, argv, "R")) != -1)
 		switch(o)
 		{
-			case 'L':
-				options = ASO_LOCAL;
-				break;
 			case 'R':
-				options = ASO_REMOTE;
+				options = ASO_REGISTER;
 				break;
 			default:
 				return _usage();

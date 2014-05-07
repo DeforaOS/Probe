@@ -1,6 +1,5 @@
 #$Id$
 service=Probe
-port=4243
 
 [call::uptime]
 ret=UINT32
