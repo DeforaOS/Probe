@@ -43,6 +43,7 @@ damon.o: damon.c ../config.h
 
 clean:
 	$(RM) -- $(../data/Probe.h_OBJS) $(Probe_OBJS) $(DaMon_OBJS)
+	./appbroker.sh -c -P "$(PREFIX)" -- "../data/Probe.h"
 
 distclean: clean
 	$(RM) -- $(TARGETS)
