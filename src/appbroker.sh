@@ -1,6 +1,6 @@
 #!/bin/sh
 #$Id$
-#Copyright (c) 2011-2014 Pierre Pronchery <khorben@defora.org>
+#Copyright (c) 2011-2015 Pierre Pronchery <khorben@defora.org>
 #
 #Redistribution and use in source and binary forms, with or without
 #modification, are permitted provided that the following conditions are met:
@@ -25,6 +25,7 @@
 
 
 #variables
+PROGNAME="appbroker.sh"
 #executables
 APPBROKER="AppBroker"
 
@@ -33,17 +34,20 @@ APPBROKER="AppBroker"
 #usage
 _usage()
 {
-	echo "Usage: appbroker.sh target" 1>&2
+	echo "Usage: $APPBROKER target" 1>&2
 	return 1
 }
 
 
 #main
 clean=0
-while getopts "cP:" name; do
+while getopts "cO:P:" name; do
 	case "$name" in
 		c)
 			clean=1
+			;;
+		O)
+			export "${OPTARG%%=*}"="${OPTARG#*=}"
 			;;
 		P)
 			#we can ignore it
@@ -62,7 +66,8 @@ fi
 
 [ "$clean" -ne 0 ] && exit 0
 
-APPINTERFACE="$1"
-APPINTERFACE="${APPINTERFACE##*/}"
+target="$1"
+source="${target#$OBJDIR}"
+APPINTERFACE="${source##*/}"
 APPINTERFACE="../data/${APPINTERFACE%%.h}.interface"
-$APPBROKER -o "$1" "$APPINTERFACE"
+$APPBROKER -o "$target" "$APPINTERFACE"
