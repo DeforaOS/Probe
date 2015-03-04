@@ -1,4 +1,5 @@
-TARGETS	= ../data/Probe.h Probe DaMon
+TARGETS	= $(OBJDIR)../data/Probe.h $(OBJDIR)Probe $(OBJDIR)DaMon
+OBJDIR	=
 PREFIX	= /usr/local
 DESTDIR	=
 BINDIR	= $(PREFIX)/bin
@@ -18,28 +19,28 @@ INSTALL	= install
 
 all: $(TARGETS)
 
-../data/Probe.h: ../data/Probe.interface
-	./appbroker.sh -P "$(PREFIX)" -- "../data/Probe.h"
+$(OBJDIR)../data/Probe.h: ../data/Probe.interface
+	./appbroker.sh -P "$(PREFIX)" -- "$(OBJDIR)../data/Probe.h"
 
-Probe_OBJS = probe.o
+Probe_OBJS = $(OBJDIR)probe.o
 Probe_CFLAGS = $(CPPFLAGSF) $(CPPFLAGS) $(CFLAGSF) $(CFLAGS)
 Probe_LDFLAGS = $(LDFLAGSF) $(LDFLAGS) -Wl,--export-dynamic
 
-Probe: $(Probe_OBJS)
-	$(CC) -o Probe $(Probe_OBJS) $(Probe_LDFLAGS)
+$(OBJDIR)Probe: $(Probe_OBJS)
+	$(CC) -o $(OBJDIR)Probe $(Probe_OBJS) $(Probe_LDFLAGS)
 
-DaMon_OBJS = damon.o
+DaMon_OBJS = $(OBJDIR)damon.o
 DaMon_CFLAGS = $(CPPFLAGSF) $(CPPFLAGS) $(CFLAGSF) $(CFLAGS)
 DaMon_LDFLAGS = $(LDFLAGSF) $(LDFLAGS)
 
-DaMon: $(DaMon_OBJS)
-	$(CC) -o DaMon $(DaMon_OBJS) $(DaMon_LDFLAGS)
+$(OBJDIR)DaMon: $(DaMon_OBJS)
+	$(CC) -o $(OBJDIR)DaMon $(DaMon_OBJS) $(DaMon_LDFLAGS)
 
-probe.o: probe.c ../data/Probe.h ../config.h
-	$(CC) $(Probe_CFLAGS) -c probe.c
+$(OBJDIR)probe.o: probe.c ../data/Probe.h ../config.h
+	$(CC) $(Probe_CFLAGS) -o $(OBJDIR)probe.o -c probe.c
 
-damon.o: damon.c ../config.h
-	$(CC) $(DaMon_CFLAGS) -c damon.c
+$(OBJDIR)damon.o: damon.c ../config.h
+	$(CC) $(DaMon_CFLAGS) -o $(OBJDIR)damon.o -c damon.c
 
 clean:
 	$(RM) -- $(../data/Probe.h_OBJS) $(Probe_OBJS) $(DaMon_OBJS)
@@ -50,9 +51,9 @@ distclean: clean
 
 install: $(TARGETS)
 	$(MKDIR) $(DESTDIR)$(BINDIR)
-	$(INSTALL) -m 0755 Probe $(DESTDIR)$(BINDIR)/Probe
+	$(INSTALL) -m 0755 $(OBJDIR)Probe $(DESTDIR)$(BINDIR)/Probe
 	$(MKDIR) $(DESTDIR)$(BINDIR)
-	$(INSTALL) -m 0755 DaMon $(DESTDIR)$(BINDIR)/DaMon
+	$(INSTALL) -m 0755 $(OBJDIR)DaMon $(DESTDIR)$(BINDIR)/DaMon
 
 uninstall:
 	$(RM) -- $(DESTDIR)$(BINDIR)/Probe
