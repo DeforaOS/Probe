@@ -114,6 +114,7 @@ static int _sysinfo_generic(struct sysinfo * info)
 # if defined(_sysinfo_uptime_sysctl) || defined(_sysinfo_loads_sysctl) \
 	|| defined(_sysinfo_ram_sysctl) || defined(_sysinfo_procs_sysctl)
 #  include <sys/param.h>
+#  define _KMEMUSER /* XXX for NetBSD */
 #  include <sys/sysctl.h>
 # endif
 # if defined(_sysinfo_uptime_sysctl)
