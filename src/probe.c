@@ -160,6 +160,7 @@ static int _sysinfo_loads_sysctl(struct sysinfo * info)
 # endif
 
 # if defined(_sysinfo_ram_sysctl)
+#  include <uvm/uvm.h>
 static int _sysinfo_ram_sysctl(struct sysinfo * info)
 {
 	int mib[2];
