@@ -28,16 +28,17 @@ RRDTOOL="rrdtool"
 #create
 create()
 {
+	ret=0
 	i="$1"
 
-	$MKDIR -- "$i"
+	$MKDIR -- "$i"						|| ret=3
 
 	$RRDTOOL create "$i/uptime.rrd" --start "$($DATE +%s)" \
 		--step 10 \
 		DS:uptime:GAUGE:120:0:U \
 		RRA:AVERAGE:0.5:1:360 \
 		RRA:AVERAGE:0.5:24:360 \
-		RRA:AVERAGE:0.5:168:360
+		RRA:AVERAGE:0.5:168:360				|| ret=3
 
 	$RRDTOOL create "$i/load.rrd" --start "$($DATE +%s)" \
 		--step 10 \
@@ -46,7 +47,7 @@ create()
 		DS:load15:GAUGE:30:0:U \
 		RRA:AVERAGE:0.5:1:360 \
 		RRA:AVERAGE:0.5:24:360 \
-		RRA:AVERAGE:0.5:168:360
+		RRA:AVERAGE:0.5:168:360				|| ret=3
 
 	$RRDTOOL create "$i/ram.rrd" --start "$($DATE +%s)" \
 		--step 10 \
@@ -56,7 +57,7 @@ create()
 		DS:rambuffer:GAUGE:30:0:U \
 		RRA:AVERAGE:0.5:1:360 \
 		RRA:AVERAGE:0.5:24:360 \
-		RRA:AVERAGE:0.5:168:360
+		RRA:AVERAGE:0.5:168:360				|| ret=3
 
 	$RRDTOOL create "$i/swap.rrd" --start "$($DATE +%s)" \
 		--step 10 \
@@ -64,21 +65,21 @@ create()
 		DS:swapfree:GAUGE:30:0:U \
 		RRA:AVERAGE:0.5:1:360 \
 		RRA:AVERAGE:0.5:24:360 \
-		RRA:AVERAGE:0.5:168:360
+		RRA:AVERAGE:0.5:168:360				|| ret=3
 
 	$RRDTOOL create "$i/users.rrd" --start "$($DATE +%s)" \
 		--step 10 \
 		DS:users:GAUGE:30:0:65536 \
 		RRA:AVERAGE:0.5:1:360 \
 		RRA:AVERAGE:0.5:24:360 \
-		RRA:AVERAGE:0.5:168:360
+		RRA:AVERAGE:0.5:168:360				|| ret=3
 
 	$RRDTOOL create "$i/procs.rrd" --start "$($DATE +%s)" \
 		--step 10 \
 		DS:procs:GAUGE:30:0:65536 \
 		RRA:AVERAGE:0.5:1:360 \
 		RRA:AVERAGE:0.5:24:360 \
-		RRA:AVERAGE:0.5:168:360
+		RRA:AVERAGE:0.5:168:360				|| ret=3
 
 	$RRDTOOL create "$i/eth0.rrd" --start "$($DATE +%s)" \
 		--step 10 \
@@ -86,7 +87,9 @@ create()
 		DS:iftxbytes:COUNTER:30:0:U \
 		RRA:AVERAGE:0.5:1:360 \
 		RRA:AVERAGE:0.5:24:360 \
-		RRA:AVERAGE:0.5:168:360
+		RRA:AVERAGE:0.5:168:360				|| ret=3
+
+	return $ret
 }
 
 
@@ -103,6 +106,11 @@ if [ $# -lt 1 ]; then
 	usage
 	exit $?
 fi
+ret=0
 for i in "$@"; do
-	create "$i"
+	if ! create "$i"; then
+		echo "$PROGNAME: $i: Could not create one or more database" 1>&2
+		ret=2
+	fi
 done
+exit $ret
