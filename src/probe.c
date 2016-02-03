@@ -375,6 +375,7 @@ static int _ifinfo_linux_append(struct ifinfo ** dev, char * buf, int nb)
 
 /* ifinfo netbsd */
 #if defined(_ifinfo_bsd)
+# include <sys/ioctl.h>
 # include <sys/socket.h>
 # include <net/if.h>
 # include <ifaddrs.h>
