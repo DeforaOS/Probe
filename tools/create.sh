@@ -103,6 +103,6 @@ if [ $# -lt 1 ]; then
 	usage
 	exit $?
 fi
-for i in $@; do
+for i in "$@"; do
 	create "$i"
 done
