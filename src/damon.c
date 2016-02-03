@@ -27,8 +27,10 @@
 #include <errno.h>
 #include <System.h>
 #include <System/App.h>
+#include "damon.h"
 #include "../config.h"
 
+/* constants */
 #ifndef PREFIX
 # define PREFIX		"/usr/local"
 #endif
@@ -46,8 +48,6 @@
 /* DaMon */
 /* private */
 /* types */
-typedef struct _DaMon DaMon;
-
 typedef struct _Host
 {
 	DaMon * damon;
@@ -73,40 +73,77 @@ struct _DaMon
 
 
 /* prototypes */
+static int _damon_init(DaMon * damon, char const * config, Event * event);
+static void _damon_destroy(DaMon * damon);
+
 static int _damon_perror(char const * message, int error);
+
+static int _damon_refresh(DaMon * damon);
 
 
 /* functions */
 /* public */
-/* damon */
-static int _damon_init(DaMon * damon, char const * config);
-static void _damon_destroy(DaMon * damon);
-
-static int _damon(char const * config)
+/* essential */
+/* damon_new */
+DaMon * damon_new(char const * config)
 {
-	DaMon damon;
+	DaMon * damon;
+	Event * event;
 
-	if(_damon_init(&damon, config) != 0)
-		return 1;
-	if(event_loop(damon.event) != 0)
-		error_print(PROGNAME);
-	_damon_destroy(&damon);
-	return 1;
+	if((event = event_new()) == NULL)
+		return NULL;
+	/* FIXME let event be deleted eventually */
+	if((damon = damon_new_event(config, event)) == NULL)
+	{
+		event_delete(event);
+		return NULL;
+	}
+	return damon;
 }
 
 
-/* _damon_init */
-static int _init_config(DaMon * damon, char const * filename);
-static int _damon_refresh(DaMon * damon);
+/* damon_new_event */
+DaMon * damon_new_event(char const * config, Event * event)
+{
+	DaMon * damon;
 
-static int _damon_init(DaMon * damon, char const * filename)
+	if((damon = object_new(sizeof(*damon))) == NULL)
+		return NULL;
+	_damon_init(damon, config, event);
+	return damon;
+}
+
+
+/* damon_delete */
+void damon_delete(DaMon * damon)
+{
+	_damon_destroy(damon);
+	object_delete(damon);
+}
+
+
+/* accessors */
+/* damon_get_event */
+Event * damon_get_event(DaMon * damon)
+{
+	return damon->event;
+}
+
+
+/* private */
+/* functions */
+/* damon_init */
+static int _init_config(DaMon * damon, char const * filename);
+static int _init_config_hosts(DaMon * damon, Config * config,
+		char const * hosts);
+
+static int _damon_init(DaMon * damon, char const * config, Event * event)
 {
 	struct timeval tv;
 
-	if(_init_config(damon, filename) != 0)
+	if(_init_config(damon, config) != 0)
 		return 1;
-	if((damon->event = event_new()) == NULL)
-		return error_print(PROGNAME);
+	damon->event = event;
 	_damon_refresh(damon);
 	tv.tv_sec = damon->refresh;
 	tv.tv_usec = 0;
@@ -114,9 +151,6 @@ static int _damon_init(DaMon * damon, char const * filename)
 			(EventTimeoutFunc)_damon_refresh, damon);
 	return 0;
 }
-
-/* _init_config */
-static int _config_hosts(DaMon * damon, Config * config, char const * hosts);
 
 static int _init_config(DaMon * damon, char const * filename)
 {
@@ -151,14 +185,15 @@ static int _init_config(DaMon * damon, char const * filename)
 #endif
 	}
 	if((p = config_get(config, "", "hosts")) != NULL)
-		_config_hosts(damon, config, p);
+		_init_config_hosts(damon, config, p);
 	config_delete(config);
 	return 0;
 }
 
 static int _hosts_host(DaMon * damon, Config * config, Host * host,
 		char const * h, unsigned int pos);
-static int _config_hosts(DaMon * damon, Config * config, char const * hosts)
+static int _init_config_hosts(DaMon * damon, Config * config,
+		char const * hosts)
 {
 	char const * h = hosts;
 	unsigned int pos = 0;
@@ -260,6 +295,8 @@ static char ** _host_comma(char const * line)
 	return NULL;
 }
 
+
+/* damon_destroy */
 static void _damon_destroy(DaMon * damon)
 {
 	unsigned int i;
@@ -274,6 +311,18 @@ static void _damon_destroy(DaMon * damon)
 	free(damon->hosts);
 }
 
+
+/* useful */
+/* damon_perror */
+static int _damon_perror(char const * message, int ret)
+{
+	return error_set_print(PROGNAME, ret, "%s%s%s\n",
+			message ? message : "",
+			message ? ": " : "", strerror(errno));
+}
+
+
+/* damon_refresh */
 static AppClient * _refresh_connect(Host * host, Event * event);
 static int _refresh_uptime(AppClient * ac, Host * host, char * rrd);
 static int _refresh_load(AppClient * ac, Host * host, char * rrd);
@@ -283,6 +332,7 @@ static int _refresh_procs(AppClient * ac, Host * host, char * rrd);
 static int _refresh_users(AppClient * ac, Host * host, char * rrd);
 static int _refresh_ifaces(AppClient * ac, Host * host, char * rrd);
 static int _refresh_vols(AppClient * ac, Host * host, char * rrd);
+
 static int _damon_refresh(DaMon * damon)
 {
 	unsigned int i;
@@ -515,43 +565,4 @@ static int _exec(char * argv[])
 	if(ret == -1)
 		return _damon_perror("waitpid", -1);
 	return WEXITSTATUS(status);
-}
-
-
-/* private */
-static int _damon_perror(char const * message, int ret)
-{
-	return error_set_print(PROGNAME, ret, "%s%s%s\n",
-			message ? message : "",
-			message ? ": " : "", strerror(errno));
-}
-
-
-/* usage */
-static int _usage(void)
-{
-	fputs("Usage: " PROGNAME " [-f filename]\n"
-"  -f\tConfiguration file to load\n", stderr);
-	return 1;
-}
-
-
-/* main */
-int main(int argc, char * argv[])
-{
-	int o;
-	char const * config = NULL;
-
-	while((o = getopt(argc, argv, "f:")) != -1)
-		switch(o)
-		{
-			case 'f':
-				config = optarg;
-				break;
-			default:
-				return _usage();
-		}
-	if(optind != argc)
-		return _usage();
-	return (_damon(config) == 0) ? 0 : 2;
 }
