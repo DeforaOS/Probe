@@ -84,7 +84,7 @@ int rrd_create(RRDType type, char const * filename)
 		case RRDTYPE_USERS:
 			argv[5] = "--step";
 			argv[6] = "300";
-			argv[7] = "DS:count:GAUGE:600:0:U";
+			argv[7] = "DS:users:GAUGE:600:0:U";
 			argv[8] = RRD_AVERAGE_DAY;
 			argv[9] = RRD_AVERAGE_WEEK;
 			argv[10] = RRD_AVERAGE_4WEEK;
