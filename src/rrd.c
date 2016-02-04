@@ -27,6 +27,9 @@
 #include "rrd.h"
 
 /* constants */
+#ifndef PROGNAME
+# define PROGNAME		"DaMon"
+#endif
 #ifndef RRDTOOL
 # define RRDTOOL		"rrdtool"
 #endif
@@ -55,11 +58,16 @@ static char * _rrd_timestamp(void);
 /* public */
 /* functions */
 /* rrd_create */
+static int _create_directories(char const * filename);
+
 int rrd_create(RRDType type, char const * filename)
 {
 	int ret;
 	char * argv[16] = { RRDTOOL, "create", NULL, "--start", NULL, NULL };
 
+	/* create parent directories */
+	if(_create_directories(filename) != 0)
+		return -1;
 	switch(type)
 	{
 		case RRDTYPE_LOAD:
@@ -86,6 +94,32 @@ int rrd_create(RRDType type, char const * filename)
 		ret = -1;
 	string_delete(argv[4]);
 	string_delete(argv[2]);
+	return ret;
+}
+
+static int _create_directories(char const * filename)
+{
+	int ret = 0;
+	char * p;
+	size_t i;
+
+	if((p = strdup(filename)) == NULL)
+		return -1;
+	for(i = 0; p[i] != '\0'; i++)
+	{
+		if(i == 0 || p[i] != '/')
+			continue;
+		p[i] = '\0';
+		if(mkdir(p, 0777) != 0 && errno != EEXIST)
+		{
+			error_set_print(PROGNAME, -errno, "%s: %s", p,
+					strerror(errno));
+			ret = -1;
+			break;
+		}
+		p[i] = '/';
+	}
+	free(p);
 	return ret;
 }
 
