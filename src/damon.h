@@ -34,4 +34,7 @@ void damon_delete(DaMon * damon);
 /* accessors */
 Event * damon_get_event(DaMon * damon);
 
+/* useful */
+int damon_refresh(DaMon * damon);
+
 #endif /* !DAMON_DAMON_H */
