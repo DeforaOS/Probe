@@ -391,7 +391,8 @@ static int _init_config(DaMon * damon, char const * filename)
 		damon->refresh = (*p == '\0' || *q != '\0' || tmp <= 0)
 			? DAMON_DEFAULT_REFRESH : tmp;
 #ifdef DEBUG
-		fprintf(stderr, "refresh set to %d\n", damon->refresh);
+		fprintf(stderr, "DEBUG: %s() refresh=%d\n", __func__,
+				damon->refresh);
 #endif
 	}
 	if((p = config_get(config, "", "hosts")) != NULL)
@@ -537,6 +538,10 @@ static int _damon_update(DaMon * damon, RRDType type, char const * filename,
 	char * path;
 	va_list args;
 
+#ifdef DEBUG
+	fprintf(stderr, "DEBUG: %s(%u, \"%s\", %d, ...) \"%s\"\n", __func__,
+			type, filename, args_cnt, damon->prefix);
+#endif
 	if((path = string_new_append(damon->prefix, "/", filename, NULL))
 			== NULL)
 		return -1;
