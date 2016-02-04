@@ -185,7 +185,7 @@ static int _refresh_status_parse_diskusage_volume(DaMon * damon,
 		return -1;
 	/* graph the volume used instead */
 	usage[0] = usage[1] - usage[0];
-	if((rrd = string_new_append(hostname, "/", "volume",
+	if((rrd = string_new_append(hostname, "/volume",
 					(strcmp(volume, "/") == 0)
 					? "" : volume,
 					".rrd", NULL)) == NULL)
@@ -217,7 +217,7 @@ static int _refresh_status_parse_loadavg(DaMon * damon, char const * hostname,
 			load[1] = json_real_value(value) * 1000;
 		else if(strcmp(key, "15-min") == 0)
 			load[2] = json_real_value(value) * 1000;
-	if((rrd = string_new_append(hostname, "/", "load.rrd", NULL)) == NULL)
+	if((rrd = string_new_append(hostname, "/load.rrd", NULL)) == NULL)
 		return -1;
 	ret = damon_update(damon, RRDTYPE_LOAD, rrd,
 			3, load[0], load[1], load[2]);
@@ -242,7 +242,7 @@ static int _refresh_status_parse_w(DaMon * damon, char const * hostname,
 		return -1;
 	json_array_foreach(json, index, value)
 		count++;
-	if((rrd = string_new_append(hostname, "/", "users.rrd", NULL)) == NULL)
+	if((rrd = string_new_append(hostname, "/users.rrd", NULL)) == NULL)
 		return -1;
 	ret = damon_update(damon, RRDTYPE_USERS, rrd, 1, count);
 	string_delete(rrd);
