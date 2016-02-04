@@ -509,9 +509,9 @@ static void _damon_destroy(DaMon * damon)
 /* damon_perror */
 static int _damon_perror(char const * message, int ret)
 {
-	return error_set_print(PROGNAME, ret, "%s%s%s\n",
-			message ? message : "",
-			message ? ": " : "", strerror(errno));
+	return error_set_print(PROGNAME, ret, "%s%s%s",
+			(message != NULL) ? message : "",
+			(message != NULL) ? ": " : "", strerror(errno));
 }
 
 
