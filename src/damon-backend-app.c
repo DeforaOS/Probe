@@ -241,6 +241,6 @@ static int _refresh_vols_vol(AppClient * ac, Host * host, char * rrd,
 			!= 0)
 		return 1;
 	sprintf(rrd, "%s%s%s", host->hostname, vol, ".rrd"); /* FIXME */
-	damon_update(host->damon, RRDTYPE_UNKNOWN, rrd, 2, res[0], res[1]);
+	damon_update(host->damon, RRDTYPE_VOLUME, rrd, 2, res[0], res[1]);
 	return 0;
 }
