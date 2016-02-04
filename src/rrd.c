@@ -15,6 +15,7 @@
 
 
 
+#include <sys/stat.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -28,6 +29,18 @@
 #ifndef RRDTOOL
 # define RRDTOOL		"rrdtool"
 #endif
+#ifndef RRD_XFF
+# define RRD_XFF		"0.5"
+#endif
+#ifndef RRD_AVERAGE_DAY
+# define RRD_AVERAGE_DAY	"RRA:AVERAGE:" RRD_XFF ":1:288"
+#endif
+#ifndef RRD_AVERAGE_WEEK
+# define RRD_AVERAGE_WEEK	"RRA:AVERAGE:" RRD_XFF ":2:1008"
+#endif
+#ifndef RRD_AVERAGE_4WEEK
+# define RRD_AVERAGE_4WEEK	"RRA:AVERAGE:" RRD_XFF ":8:1008"
+#endif
 
 
 /* RRD */
@@ -35,10 +48,47 @@
 /* prototypes */
 static int _rrd_exec(char * argv[]);
 static int _rrd_perror(char const * message, int ret);
+static char * _rrd_timestamp(void);
 
 
 /* public */
 /* functions */
+/* rrd_create */
+int rrd_create(RRDType type, char const * filename)
+{
+	int ret;
+	char * argv[16] = { RRDTOOL, "create", NULL, "--start", NULL, NULL };
+
+	switch(type)
+	{
+		case RRDTYPE_LOAD:
+			argv[5] = "--step";
+			argv[6] = "300";
+			argv[7] = "DS:load1:GAUGE:600:0:U";
+			argv[8] = "DS:load5:GAUGE:600:0:U";
+			argv[9] = "DS:load15:GAUGE:600:0:U";
+			argv[10] = RRD_AVERAGE_DAY;
+			argv[11] = RRD_AVERAGE_WEEK;
+			argv[12] = RRD_AVERAGE_4WEEK;
+			argv[13] = NULL;
+			break;
+		default:
+			/* FIXME implement */
+			return -1;
+	}
+	argv[2] = string_new(filename);
+	argv[4] = _rrd_timestamp();
+	/* create the database */
+	if(argv[2] != NULL && argv[4] != NULL)
+		ret = _rrd_exec(argv);
+	else
+		ret = -1;
+	string_delete(argv[4]);
+	string_delete(argv[2]);
+	return ret;
+}
+
+
 /* rrd_update */
 int rrd_update(RRDType type, char const * filename, int args_cnt, ...)
 {
@@ -55,6 +105,7 @@ int rrd_update(RRDType type, char const * filename, int args_cnt, ...)
 /* rrd_updatev */
 int rrd_updatev(RRDType type, char const * filename, int args_cnt, va_list args)
 {
+	struct stat st;
 	char * argv[] = { RRDTOOL, "update", NULL, NULL, NULL };
 	struct timeval tv;
 	size_t s;
@@ -65,6 +116,14 @@ int rrd_updatev(RRDType type, char const * filename, int args_cnt, va_list args)
 #ifdef DEBUG
 	fprintf(stderr, "DEBUG: %s(%u, \"%s\")\n", __func__, type, filename);
 #endif
+	/* create the database if not available */
+	if(stat(filename, &st) != 0)
+	{
+		if(errno != ENOENT)
+			return _rrd_perror(filename, -errno);
+		if(rrd_create(type, filename) != 0)
+			return -1;
+	}
 	/* prepare the parameters */
 	if(gettimeofday(&tv, NULL) != 0)
 		return _rrd_perror("gettimeofday", -errno);
@@ -125,4 +184,18 @@ static int _rrd_perror(char const * message, int ret)
 {
 	return error_set_code(ret, "%s%s%s", (message != NULL) ? message : "",
 			(message != NULL) ? ": " : "", strerror(errno));
+}
+
+
+/* rrd_timestamp */
+static char * _rrd_timestamp(void)
+{
+	struct timeval tv;
+
+	if(gettimeofday(&tv, NULL) != 0)
+	{
+		_rrd_perror("gettimeofday", -errno);
+		return NULL;
+	}
+	return string_new_format("%ld", tv.tv_sec);
 }

@@ -25,11 +25,14 @@
 /* types */
 typedef enum _RRDType
 {
-	RRDTYPE_UNKNOWN = 0
+	RRDTYPE_UNKNOWN = 0,
+	RRDTYPE_LOAD
 } RRDType;
 
 
 /* functions */
+int rrd_create(RRDType type, char const * filename);
+
 int rrd_update(RRDType type, char const * filename, int args_cnt, ...);
 int rrd_updatev(RRDType type, char const * filename,
 		int args_cnt, va_list args);

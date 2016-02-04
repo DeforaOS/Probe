@@ -74,7 +74,7 @@ static void _damon_destroy(DaMon * damon);
 
 static int _damon_perror(char const * message, int error);
 
-static int _damon_update(DaMon * damon, char const * filename,
+static int _damon_update(DaMon * damon, RRDType type, char const * filename,
 		int args_cnt, ...);
 
 
@@ -198,7 +198,7 @@ static int _refresh_uptime(AppClient * ac, Host * host, char * rrd)
 	if(appclient_call(ac, (void **)&ret, "uptime") != 0)
 		return error_print(PROGNAME);
 	sprintf(rrd, "%s%c%s", host->hostname, DAMON_SEP, "uptime.rrd");
-	_damon_update(host->damon, rrd, 1, ret);
+	_damon_update(host->damon, RRDTYPE_UNKNOWN, rrd, 1, ret);
 	return 0;
 }
 
@@ -213,7 +213,8 @@ static int _refresh_load(AppClient * ac, Host * host, char * rrd)
 	if(res != 0)
 		return 0;
 	sprintf(rrd, "%s%c%s", host->hostname, DAMON_SEP, "load.rrd");
-	_damon_update(host->damon, rrd, 3, load[0], load[1], load[2]);
+	_damon_update(host->damon, RRDTYPE_LOAD, rrd, 3,
+			load[0], load[1], load[2]);
 	return 0;
 }
 
@@ -224,7 +225,7 @@ static int _refresh_procs(AppClient * ac, Host * host, char * rrd)
 	if(appclient_call(ac, (void **)&res, "procs") != 0)
 		return 1;
 	sprintf(rrd, "%s%c%s", host->hostname, DAMON_SEP, "procs.rrd");
-	_damon_update(host->damon, rrd, 1, res);
+	_damon_update(host->damon, RRDTYPE_UNKNOWN, rrd, 1, res);
 	return 0;
 }
 
@@ -237,7 +238,8 @@ static int _refresh_ram(AppClient * ac, Host * host, char * rrd)
 				&ram[3]) != 0)
 		return 1;
 	sprintf(rrd, "%s%c%s", host->hostname, DAMON_SEP, "ram.rrd");
-	_damon_update(host->damon, rrd, 4, ram[0], ram[1], ram[2], ram[3]);
+	_damon_update(host->damon, RRDTYPE_UNKNOWN, rrd, 4,
+			ram[0], ram[1], ram[2], ram[3]);
 	return 0;
 }
 
@@ -249,7 +251,7 @@ static int _refresh_swap(AppClient * ac, Host * host, char * rrd)
 	if(appclient_call(ac, (void **)&res, "swap", &swap[0], &swap[1]) != 0)
 		return 1;
 	sprintf(rrd, "%s%c%s", host->hostname, DAMON_SEP, "swap.rrd");
-	_damon_update(host->damon, rrd, 2, swap[0], swap[1]);
+	_damon_update(host->damon, RRDTYPE_UNKNOWN, rrd, 2, swap[0], swap[1]);
 	return 0;
 }
 
@@ -260,7 +262,7 @@ static int _refresh_users(AppClient * ac, Host * host, char * rrd)
 	if(appclient_call(ac, (void **)&res, "users") != 0)
 		return 1;
 	sprintf(rrd, "%s%c%s", host->hostname, DAMON_SEP, "users.rrd");
-	_damon_update(host->damon, rrd, 1, res);
+	_damon_update(host->damon, RRDTYPE_UNKNOWN, rrd, 1, res);
 	return 0;
 }
 
@@ -288,7 +290,7 @@ static int _ifaces_if(AppClient * ac, Host * host, char * rrd,
 				iface) != 0)
 		return 1;
 	sprintf(rrd, "%s%c%s%s", host->hostname, DAMON_SEP, iface, ".rrd");
-	_damon_update(host->damon, rrd, 2, res[0], res[1]);
+	_damon_update(host->damon, RRDTYPE_UNKNOWN, rrd, 2, res[0], res[1]);
 	return 0;
 }
 
@@ -314,7 +316,7 @@ static int _vols_vol(AppClient * ac, Host * host, char * rrd, char * vol)
 			!= 0)
 		return 1;
 	sprintf(rrd, "%s%s%s", host->hostname, vol, ".rrd"); /* FIXME */
-	_damon_update(host->damon, rrd, 2, res[0], res[1]);
+	_damon_update(host->damon, RRDTYPE_UNKNOWN, rrd, 2, res[0], res[1]);
 	return 0;
 }
 
@@ -512,7 +514,7 @@ static int _damon_perror(char const * message, int ret)
 
 
 /* damon_update */
-static int _damon_update(DaMon * damon, char const * filename,
+static int _damon_update(DaMon * damon, RRDType type, char const * filename,
 		int args_cnt, ...)
 {
 	int ret;
@@ -523,7 +525,7 @@ static int _damon_update(DaMon * damon, char const * filename,
 			== NULL)
 		return -1;
 	va_start(args, args_cnt);
-	ret = rrd_updatev(RRDTYPE_UNKNOWN, path, args_cnt, args);
+	ret = rrd_updatev(type, path, args_cnt, args);
 	va_end(args);
 	string_delete(path);
 	return ret;
