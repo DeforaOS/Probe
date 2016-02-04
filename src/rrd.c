@@ -21,6 +21,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 #include <errno.h>
 #include <System.h>
 #include "rrd.h"
@@ -137,8 +138,8 @@ int rrd_updatev(RRDType type, char const * filename, int args_cnt, va_list args)
 	}
 	pos = snprintf(argv[3], s, "%ld", tv.tv_sec);
 	for(i = 0; i < args_cnt; i++)
-		pos += snprintf(&argv[3][pos], s - pos, ":%u",
-				va_arg(args, unsigned int));
+		pos += snprintf(&argv[3][pos], s - pos, ":%"PRIu64,
+				va_arg(args, uint64_t));
 	/* update the database */
 	ret = _rrd_exec(argv);
 	free(argv[3]);
