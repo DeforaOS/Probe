@@ -18,15 +18,14 @@
 
 
 #include <sys/types.h>
-#include <sys/wait.h>
 #include <unistd.h>
-#include <stdarg.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
 #include <System.h>
 #include <System/App.h>
+#include "rrd.h"
 #include "damon.h"
 #include "../config.h"
 
@@ -39,9 +38,6 @@
 #endif
 #ifndef PROGNAME
 # define PROGNAME	"DaMon"
-#endif
-#ifndef RRDTOOL
-# define RRDTOOL	"rrdtool"
 #endif
 
 
@@ -78,7 +74,8 @@ static void _damon_destroy(DaMon * damon);
 
 static int _damon_perror(char const * message, int error);
 
-static int _rrd_update(DaMon * damon, char const * filename, int args_cnt, ...);
+static int _damon_update(DaMon * damon, char const * filename,
+		int args_cnt, ...);
 
 
 /* functions */
@@ -201,7 +198,7 @@ static int _refresh_uptime(AppClient * ac, Host * host, char * rrd)
 	if(appclient_call(ac, (void **)&ret, "uptime") != 0)
 		return error_print(PROGNAME);
 	sprintf(rrd, "%s%c%s", host->hostname, DAMON_SEP, "uptime.rrd");
-	_rrd_update(host->damon, rrd, 1, ret);
+	_damon_update(host->damon, rrd, 1, ret);
 	return 0;
 }
 
@@ -216,7 +213,7 @@ static int _refresh_load(AppClient * ac, Host * host, char * rrd)
 	if(res != 0)
 		return 0;
 	sprintf(rrd, "%s%c%s", host->hostname, DAMON_SEP, "load.rrd");
-	_rrd_update(host->damon, rrd, 3, load[0], load[1], load[2]);
+	_damon_update(host->damon, rrd, 3, load[0], load[1], load[2]);
 	return 0;
 }
 
@@ -227,7 +224,7 @@ static int _refresh_procs(AppClient * ac, Host * host, char * rrd)
 	if(appclient_call(ac, (void **)&res, "procs") != 0)
 		return 1;
 	sprintf(rrd, "%s%c%s", host->hostname, DAMON_SEP, "procs.rrd");
-	_rrd_update(host->damon, rrd, 1, res);
+	_damon_update(host->damon, rrd, 1, res);
 	return 0;
 }
 
@@ -240,7 +237,7 @@ static int _refresh_ram(AppClient * ac, Host * host, char * rrd)
 				&ram[3]) != 0)
 		return 1;
 	sprintf(rrd, "%s%c%s", host->hostname, DAMON_SEP, "ram.rrd");
-	_rrd_update(host->damon, rrd, 4, ram[0], ram[1], ram[2], ram[3]);
+	_damon_update(host->damon, rrd, 4, ram[0], ram[1], ram[2], ram[3]);
 	return 0;
 }
 
@@ -252,7 +249,7 @@ static int _refresh_swap(AppClient * ac, Host * host, char * rrd)
 	if(appclient_call(ac, (void **)&res, "swap", &swap[0], &swap[1]) != 0)
 		return 1;
 	sprintf(rrd, "%s%c%s", host->hostname, DAMON_SEP, "swap.rrd");
-	_rrd_update(host->damon, rrd, 2, swap[0], swap[1]);
+	_damon_update(host->damon, rrd, 2, swap[0], swap[1]);
 	return 0;
 }
 
@@ -263,7 +260,7 @@ static int _refresh_users(AppClient * ac, Host * host, char * rrd)
 	if(appclient_call(ac, (void **)&res, "users") != 0)
 		return 1;
 	sprintf(rrd, "%s%c%s", host->hostname, DAMON_SEP, "users.rrd");
-	_rrd_update(host->damon, rrd, 1, res);
+	_damon_update(host->damon, rrd, 1, res);
 	return 0;
 }
 
@@ -291,7 +288,7 @@ static int _ifaces_if(AppClient * ac, Host * host, char * rrd,
 				iface) != 0)
 		return 1;
 	sprintf(rrd, "%s%c%s%s", host->hostname, DAMON_SEP, iface, ".rrd");
-	_rrd_update(host->damon, rrd, 2, res[0], res[1]);
+	_damon_update(host->damon, rrd, 2, res[0], res[1]);
 	return 0;
 }
 
@@ -317,7 +314,7 @@ static int _vols_vol(AppClient * ac, Host * host, char * rrd, char * vol)
 			!= 0)
 		return 1;
 	sprintf(rrd, "%s%s%s", host->hostname, vol, ".rrd"); /* FIXME */
-	_rrd_update(host->damon, rrd, 2, res[0], res[1]);
+	_damon_update(host->damon, rrd, 2, res[0], res[1]);
 	return 0;
 }
 
@@ -514,58 +511,20 @@ static int _damon_perror(char const * message, int ret)
 }
 
 
-/* rrd_update */
-static int _update_exec(char * argv[]);
-
-static int _rrd_update(DaMon * damon, char const * filename, int args_cnt, ...)
+/* damon_update */
+static int _damon_update(DaMon * damon, char const * filename,
+		int args_cnt, ...)
 {
-	char * argv[] = { RRDTOOL, "update", NULL, NULL, NULL };
-	struct timeval tv;
-	int pos;
-	int i;
+	int ret;
+	char * path;
 	va_list args;
-	int ret;
 
-	if(gettimeofday(&tv, NULL) != 0)
-		return _damon_perror("gettimeofday", 1);
-	argv[2] = string_new_append(damon->prefix, "/", filename, NULL);
-	if((argv[3] = malloc((args_cnt + 1) * 12)) == NULL)
-		return _damon_perror(NULL, 1);
-	pos = sprintf(argv[3], "%ld", tv.tv_sec);
+	if((path = string_new_append(damon->prefix, "/", filename, NULL))
+			== NULL)
+		return -1;
 	va_start(args, args_cnt);
-	for(i = 0; i < args_cnt; i++)
-		pos += sprintf(&argv[3][pos], ":%u", va_arg(args, unsigned));
+	ret = rrd_updatev(RRDTYPE_UNKNOWN, path, args_cnt, args);
 	va_end(args);
-	ret = _update_exec(argv);
-	free(argv[3]);
-	string_delete(argv[2]);
+	string_delete(path);
 	return ret;
-}
-
-static int _update_exec(char * argv[])
-{
-	pid_t pid;
-	int status;
-	int ret;
-
-	if((pid = fork()) == -1)
-		return _damon_perror("fork", 1);
-	if(pid == 0)
-	{
-		execvp(argv[0], argv);
-		_damon_perror(argv[0], 1);
-		exit(2);
-	}
-#ifdef DEBUG
-	fprintf(stderr, "DEBUG: %s() ", __func__);
-	while(*argv != NULL)
-		fprintf(stderr, "%s ", *argv++);
-	fprintf(stderr, "\n");
-#endif
-	while((ret = waitpid(pid, &status, 0)) != -1)
-		if(WIFEXITED(status))
-			break;
-	if(ret == -1)
-		return _damon_perror("waitpid", -1);
-	return WEXITSTATUS(status);
 }
