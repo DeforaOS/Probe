@@ -137,7 +137,11 @@ static int _refresh_swap(AppClient * ac, Host * host, char * rrd);
 static int _refresh_procs(AppClient * ac, Host * host, char * rrd);
 static int _refresh_users(AppClient * ac, Host * host, char * rrd);
 static int _refresh_ifaces(AppClient * ac, Host * host, char * rrd);
+static int _refresh_ifaces_if(AppClient * ac, Host * host, char * rrd,
+		char const * iface);
 static int _refresh_vols(AppClient * ac, Host * host, char * rrd);
+static int _refresh_vols_vol(AppClient * ac, Host * host, char * rrd,
+		char * vol);
 
 int damon_refresh(DaMon * damon)
 {
@@ -266,8 +270,6 @@ static int _refresh_users(AppClient * ac, Host * host, char * rrd)
 	return 0;
 }
 
-static int _ifaces_if(AppClient * ac, Host * host, char * rrd,
-		char const * iface);
 static int _refresh_ifaces(AppClient * ac, Host * host, char * rrd)
 {
 	char ** p = host->ifaces;
@@ -276,11 +278,11 @@ static int _refresh_ifaces(AppClient * ac, Host * host, char * rrd)
 	if(p == NULL)
 		return 0;
 	for(; *p != NULL; p++)
-		ret |= _ifaces_if(ac, host, rrd, *p);
+		ret |= _refresh_ifaces_if(ac, host, rrd, *p);
 	return ret;
 }
 
-static int _ifaces_if(AppClient * ac, Host * host, char * rrd,
+static int _refresh_ifaces_if(AppClient * ac, Host * host, char * rrd,
 		char const * iface)
 {
 	int32_t res[2];
@@ -294,7 +296,6 @@ static int _ifaces_if(AppClient * ac, Host * host, char * rrd,
 	return 0;
 }
 
-static int _vols_vol(AppClient * ac, Host * host, char * rrd, char * vol);
 static int _refresh_vols(AppClient * ac, Host * host, char * rrd)
 {
 	char ** p = host->vols;
@@ -303,11 +304,12 @@ static int _refresh_vols(AppClient * ac, Host * host, char * rrd)
 	if(p == NULL)
 		return 0;
 	for(; *p != NULL; p++)
-		ret |= _vols_vol(ac, host, rrd, *p);
+		ret |= _refresh_vols_vol(ac, host, rrd, *p);
 	return ret;
 }
 
-static int _vols_vol(AppClient * ac, Host * host, char * rrd, char * vol)
+static int _refresh_vols_vol(AppClient * ac, Host * host, char * rrd,
+		char * vol)
 {
 	int32_t res[2];
 
