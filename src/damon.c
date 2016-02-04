@@ -189,7 +189,8 @@ int damon_refresh(DaMon * damon)
 	}
 	free(rrd);
 	if(ac != NULL)
-		fprintf(stderr, "%s", "DaMon: refresh: An error occured\n");
+		fprintf(stderr, "%s: %s\n", PROGNAME,
+				"refresh: An error occured");
 	return 0;
 }
 
