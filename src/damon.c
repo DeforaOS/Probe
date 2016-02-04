@@ -411,11 +411,11 @@ static int _init_config_hosts(DaMon * damon, Config * config,
 		}
 		if((p = realloc(damon->hosts, sizeof(*p) * (damon->hosts_cnt
 							+ 1))) == NULL)
-			return _damon_perror(NULL, 1);
+			return _damon_perror(NULL, -errno);
 		damon->hosts = p;
 		p = &damon->hosts[damon->hosts_cnt++];
 		if(_init_config_hosts_host(damon, config, p, h, pos) != 0)
-			return 1;
+			return -1;
 		h += pos;
 		pos = 0;
 	}
@@ -432,7 +432,7 @@ static int _init_config_hosts_host(DaMon * damon, Config * config, Host * host,
 	host->ifaces = NULL;
 	host->vols = NULL;
 	if((host->hostname = malloc(pos + 1)) == NULL)
-		return _damon_perror(NULL, 1);
+		return _damon_perror(NULL, -errno);
 	strncpy(host->hostname, h, pos);
 	host->hostname[pos] = '\0';
 #ifdef DEBUG
