@@ -189,7 +189,7 @@ static int _refresh_users(AppClient * ac, Host * host, char * rrd)
 	if(appclient_call(ac, (void **)&res, "users") != 0)
 		return 1;
 	sprintf(rrd, "%s%c%s", host->hostname, DAMON_SEP, "users.rrd");
-	damon_update(host->damon, RRDTYPE_UNKNOWN, rrd, 1, res);
+	damon_update(host->damon, RRDTYPE_USERS, rrd, 1, res);
 	return 0;
 }
 

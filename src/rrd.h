@@ -27,6 +27,7 @@ typedef enum _RRDType
 {
 	RRDTYPE_UNKNOWN = 0,
 	RRDTYPE_LOAD,
+	RRDTYPE_USERS,
 	RRDTYPE_VOLUME
 } RRDType;
 
