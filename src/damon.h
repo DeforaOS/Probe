@@ -19,6 +19,7 @@
 # define DAMON_DAMON_H
 
 # include <System.h>
+# include "rrd.h"
 
 
 /* DaMon */
@@ -35,6 +36,11 @@ void damon_delete(DaMon * damon);
 Event * damon_get_event(DaMon * damon);
 
 /* useful */
+int damon_error(char const * message, int error);
+int damon_perror(char const * message, int error);
+
 int damon_refresh(DaMon * damon);
+int damon_update(DaMon * damon, RRDType type, char const * filename,
+		int args_cnt, ...);
 
 #endif /* !DAMON_DAMON_H */

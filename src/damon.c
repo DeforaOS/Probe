@@ -25,7 +25,6 @@
 #include <errno.h>
 #include <System.h>
 #include <System/App.h>
-#include "rrd.h"
 #include "damon.h"
 #include "../config.h"
 
@@ -69,17 +68,11 @@ struct _DaMon
 #else
 # define DAMON_DEFAULT_REFRESH	300
 #endif
-#define DAMON_SEP		'/'
 
 
 /* prototypes */
 static int _damon_init(DaMon * damon, char const * config, Event * event);
 static void _damon_destroy(DaMon * damon);
-
-static int _damon_perror(char const * message, int error);
-
-static int _damon_update(DaMon * damon, RRDType type, char const * filename,
-		int args_cnt, ...);
 
 
 /* functions */
@@ -136,8 +129,43 @@ Event * damon_get_event(DaMon * damon)
 
 
 /* useful */
-/* damon_refresh */
-#include "damon-backend.c"
+/* damon_error */
+int damon_error(char const * message, int ret)
+{
+	return error_set_print(PROGNAME, ret, "%s", message);
+}
+
+
+/* damon_perror */
+int damon_perror(char const * message, int ret)
+{
+	return error_set_print(PROGNAME, ret, "%s%s%s",
+			(message != NULL) ? message : "",
+			(message != NULL) ? ": " : "", strerror(errno));
+}
+
+
+/* damon_update */
+int damon_update(DaMon * damon, RRDType type, char const * filename,
+		int args_cnt, ...)
+{
+	int ret;
+	char * path;
+	va_list args;
+
+#ifdef DEBUG
+	fprintf(stderr, "DEBUG: %s(%u, \"%s\", %d, ...) \"%s\"\n", __func__,
+			type, filename, args_cnt, damon->prefix);
+#endif
+	if((path = string_new_append(damon->prefix, "/", filename, NULL))
+			== NULL)
+		return -1;
+	va_start(args, args_cnt);
+	ret = rrd_updatev(type, path, args_cnt, args);
+	va_end(args);
+	string_delete(path);
+	return ret;
+}
 
 
 /* private */
@@ -230,7 +258,7 @@ static int _init_config_hosts(DaMon * damon, Config * config,
 		}
 		if((p = realloc(damon->hosts, sizeof(*p) * (damon->hosts_cnt
 							+ 1))) == NULL)
-			return _damon_perror(NULL, -errno);
+			return damon_perror(NULL, -errno);
 		damon->hosts = p;
 		p = &damon->hosts[damon->hosts_cnt++];
 		if(_init_config_hosts_host(damon, config, p, h, pos) != 0)
@@ -251,7 +279,7 @@ static int _init_config_hosts_host(DaMon * damon, Config * config, Host * host,
 	host->ifaces = NULL;
 	host->vols = NULL;
 	if((host->hostname = malloc(pos + 1)) == NULL)
-		return _damon_perror(NULL, -errno);
+		return damon_perror(NULL, -errno);
 	strncpy(host->hostname, h, pos);
 	host->hostname[pos] = '\0';
 #ifdef DEBUG
@@ -325,37 +353,4 @@ static void _damon_destroy(DaMon * damon)
 	}
 	event_delete(damon->event);
 	free(damon->hosts);
-}
-
-
-/* useful */
-/* damon_perror */
-static int _damon_perror(char const * message, int ret)
-{
-	return error_set_print(PROGNAME, ret, "%s%s%s",
-			(message != NULL) ? message : "",
-			(message != NULL) ? ": " : "", strerror(errno));
-}
-
-
-/* damon_update */
-static int _damon_update(DaMon * damon, RRDType type, char const * filename,
-		int args_cnt, ...)
-{
-	int ret;
-	char * path;
-	va_list args;
-
-#ifdef DEBUG
-	fprintf(stderr, "DEBUG: %s(%u, \"%s\", %d, ...) \"%s\"\n", __func__,
-			type, filename, args_cnt, damon->prefix);
-#endif
-	if((path = string_new_append(damon->prefix, "/", filename, NULL))
-			== NULL)
-		return -1;
-	va_start(args, args_cnt);
-	ret = rrd_updatev(type, path, args_cnt, args);
-	va_end(args);
-	string_delete(path);
-	return ret;
 }
