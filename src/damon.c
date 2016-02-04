@@ -106,7 +106,11 @@ DaMon * damon_new_event(char const * config, Event * event)
 
 	if((damon = object_new(sizeof(*damon))) == NULL)
 		return NULL;
-	_damon_init(damon, config, event);
+	if(_damon_init(damon, config, event) != 0)
+	{
+		object_delete(damon);
+		return NULL;
+	}
 	return damon;
 }
 
