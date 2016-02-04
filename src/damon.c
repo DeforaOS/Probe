@@ -333,6 +333,9 @@ static int _refresh_vols_vol(AppClient * ac, Host * host, char * rrd,
 static int _init_config(DaMon * damon, char const * filename);
 static int _init_config_hosts(DaMon * damon, Config * config,
 		char const * hosts);
+static int _init_config_hosts_host(DaMon * damon, Config * config, Host * host,
+		char const * h, unsigned int pos);
+static char ** _init_config_hosts_host_comma(char const * line);
 
 static int _damon_init(DaMon * damon, char const * config, Event * event)
 {
@@ -387,8 +390,6 @@ static int _init_config(DaMon * damon, char const * filename)
 	return 0;
 }
 
-static int _hosts_host(DaMon * damon, Config * config, Host * host,
-		char const * h, unsigned int pos);
 static int _init_config_hosts(DaMon * damon, Config * config,
 		char const * hosts)
 {
@@ -413,7 +414,7 @@ static int _init_config_hosts(DaMon * damon, Config * config,
 			return _damon_perror(NULL, 1);
 		damon->hosts = p;
 		p = &damon->hosts[damon->hosts_cnt++];
-		if(_hosts_host(damon, config, p, h, pos) != 0)
+		if(_init_config_hosts_host(damon, config, p, h, pos) != 0)
 			return 1;
 		h += pos;
 		pos = 0;
@@ -421,8 +422,7 @@ static int _init_config_hosts(DaMon * damon, Config * config,
 	return 0;
 }
 
-static char ** _host_comma(char const * line);
-static int _hosts_host(DaMon * damon, Config * config, Host * host,
+static int _init_config_hosts_host(DaMon * damon, Config * config, Host * host,
 		char const * h, unsigned int pos)
 {
 	char const * p;
@@ -439,13 +439,13 @@ static int _hosts_host(DaMon * damon, Config * config, Host * host,
 	fprintf(stderr, "config: Host %s\n", host->hostname);
 #endif
 	if((p = config_get(config, host->hostname, "interfaces")) != NULL)
-		host->ifaces = _host_comma(p);
+		host->ifaces = _init_config_hosts_host_comma(p);
 	if((p = config_get(config, host->hostname, "volumes")) != NULL)
-		host->vols = _host_comma(p);
+		host->vols = _init_config_hosts_host_comma(p);
 	return 0;
 }
 
-static char ** _host_comma(char const * line)
+static char ** _init_config_hosts_host_comma(char const * line)
 {
 	char const * l = line;
 	unsigned int pos = 0;
