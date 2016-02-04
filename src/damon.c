@@ -64,7 +64,11 @@ struct _DaMon
 
 
 /* constants */
-#define DAMON_DEFAULT_REFRESH	300
+#ifdef DEBUG
+# define DAMON_DEFAULT_REFRESH	10
+#else
+# define DAMON_DEFAULT_REFRESH	300
+#endif
 #define DAMON_SEP		'/'
 
 
