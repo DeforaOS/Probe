@@ -380,6 +380,11 @@ static int _init_config(DaMon * damon, char const * filename)
 	}
 	if((damon->prefix = config_get(config, "", "prefix")) == NULL)
 		damon->prefix = ".";
+	if((damon->prefix = strdup(damon->prefix)) == NULL)
+	{
+		config_delete(config);
+		return 1;
+	}
 	if((p = config_get(config, "", "refresh")) != NULL)
 	{
 		tmp = strtol(p, &q, 10);
