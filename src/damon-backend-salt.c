@@ -48,6 +48,8 @@ static int _refresh_status_parse_diskusage_volume(DaMon * damon,
 		char const * hostname, char const * volume, json_t * json);
 static int _refresh_status_parse_loadavg(DaMon * damon, char const * hostname,
 		json_t * json);
+static int _refresh_status_parse_procs(DaMon * damon, char const * hostname,
+		json_t * json);
 static int _refresh_status_parse_w(DaMon * damon, char const * hostname,
 		json_t * json);
 
@@ -126,6 +128,9 @@ static int _refresh_status_parse(DaMon * damon, json_t * json)
 						value);
 			else if(strcmp("loadavg", status) == 0)
 				_refresh_status_parse_loadavg(damon, hostname,
+						value);
+			else if(strcmp("procs", status) == 0)
+				_refresh_status_parse_procs(damon, hostname,
 						value);
 			else if(strcmp("w", status) == 0)
 				_refresh_status_parse_w(damon, hostname, value);
@@ -221,6 +226,30 @@ static int _refresh_status_parse_loadavg(DaMon * damon, char const * hostname,
 		return -1;
 	ret = damon_update(damon, RRDTYPE_LOAD, rrd,
 			3, load[0], load[1], load[2]);
+	string_delete(rrd);
+	return ret;
+}
+
+static int _refresh_status_parse_procs(DaMon * damon, char const * hostname,
+		json_t * json)
+{
+	int ret;
+	uint64_t count = 0;
+	size_t index;
+	json_t * value;
+	char * rrd;
+
+#ifdef DEBUG
+	fprintf(stderr, "DEBUG: %s(\"%s\", %d)\n", __func__, hostname,
+			json_typeof(json));
+#endif
+	if(!json_is_array(json))
+		return -1;
+	json_array_foreach(json, index, value)
+		count++;
+	if((rrd = string_new_append(hostname, "/procs.rrd", NULL)) == NULL)
+		return -1;
+	ret = damon_update(damon, RRDTYPE_PROCS, rrd, 1, count);
 	string_delete(rrd);
 	return ret;
 }
