@@ -242,7 +242,7 @@ static int _refresh_status_parse_w(DaMon * damon, char const * hostname,
 		return -1;
 	json_array_foreach(json, index, value)
 		count++;
-	if((rrd = string_new_append(hostname, "/", "user.rrd", NULL)) == NULL)
+	if((rrd = string_new_append(hostname, "/", "users.rrd", NULL)) == NULL)
 		return -1;
 	ret = damon_update(damon, RRDTYPE_USERS, rrd, 1, count);
 	string_delete(rrd);
