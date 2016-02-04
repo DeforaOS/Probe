@@ -212,7 +212,7 @@ static int _rrd_exec(char * argv[])
 #ifdef DEBUG
 	fprintf(stderr, "DEBUG: %s() ", __func__);
 	while(*argv != NULL)
-		fprintf(stderr, "%s ", *argv++);
+		fprintf(stderr, "%s ", *(argv++));
 	fprintf(stderr, "\n");
 #endif
 	while((ret = waitpid(pid, &status, 0)) != -1)
