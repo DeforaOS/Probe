@@ -376,14 +376,14 @@ static int _init_config(DaMon * damon, char const * filename)
 	{
 		error_print(PROGNAME);
 		config_delete(config);
-		return 1;
+		return -1;
 	}
 	if((damon->prefix = config_get(config, "", "prefix")) == NULL)
 		damon->prefix = ".";
 	if((damon->prefix = strdup(damon->prefix)) == NULL)
 	{
 		config_delete(config);
-		return 1;
+		return -1;
 	}
 	if((p = config_get(config, "", "refresh")) != NULL)
 	{
