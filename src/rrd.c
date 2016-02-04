@@ -52,7 +52,7 @@
 /* prototypes */
 static int _rrd_exec(char * argv[]);
 static int _rrd_perror(char const * message, int ret);
-static char * _rrd_timestamp(void);
+static char * _rrd_timestamp(off_t offset);
 
 
 /* public */
@@ -96,7 +96,7 @@ int rrd_create(RRDType type, char const * filename)
 			return -1;
 	}
 	argv[2] = string_new(filename);
-	argv[4] = _rrd_timestamp();
+	argv[4] = _rrd_timestamp(-1);
 	/* create the database */
 	if(argv[2] != NULL && argv[4] != NULL)
 		ret = _rrd_exec(argv);
@@ -233,7 +233,7 @@ static int _rrd_perror(char const * message, int ret)
 
 
 /* rrd_timestamp */
-static char * _rrd_timestamp(void)
+static char * _rrd_timestamp(off_t offset)
 {
 	struct timeval tv;
 
@@ -242,5 +242,5 @@ static char * _rrd_timestamp(void)
 		_rrd_perror("gettimeofday", -errno);
 		return NULL;
 	}
-	return string_new_format("%ld", tv.tv_sec);
+	return string_new_format("%ld", tv.tv_sec + offset);
 }
