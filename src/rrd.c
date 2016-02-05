@@ -45,6 +45,9 @@
 #ifndef RRD_AVERAGE_4WEEK
 # define RRD_AVERAGE_4WEEK	"RRA:AVERAGE:" RRD_XFF ":8:1008"
 #endif
+#ifndef RRD_AVERAGE_YEAR
+# define RRD_AVERAGE_YEAR	"RRA:AVERAGE:" RRD_XFF ":104:1008"
+#endif
 
 
 /* RRD */
@@ -79,7 +82,8 @@ int rrd_create(RRDType type, char const * filename)
 			argv[10] = RRD_AVERAGE_DAY;
 			argv[11] = RRD_AVERAGE_WEEK;
 			argv[12] = RRD_AVERAGE_4WEEK;
-			argv[13] = NULL;
+			argv[13] = RRD_AVERAGE_YEAR;
+			argv[14] = NULL;
 			break;
 		case RRDTYPE_PROCS:
 			argv[5] = "--step";
@@ -88,7 +92,8 @@ int rrd_create(RRDType type, char const * filename)
 			argv[8] = RRD_AVERAGE_DAY;
 			argv[9] = RRD_AVERAGE_WEEK;
 			argv[10] = RRD_AVERAGE_4WEEK;
-			argv[11] = NULL;
+			argv[11] = RRD_AVERAGE_YEAR;
+			argv[12] = NULL;
 			break;
 		case RRDTYPE_USERS:
 			argv[5] = "--step";
@@ -97,7 +102,8 @@ int rrd_create(RRDType type, char const * filename)
 			argv[8] = RRD_AVERAGE_DAY;
 			argv[9] = RRD_AVERAGE_WEEK;
 			argv[10] = RRD_AVERAGE_4WEEK;
-			argv[11] = NULL;
+			argv[11] = RRD_AVERAGE_YEAR;
+			argv[12] = NULL;
 			break;
 		case RRDTYPE_VOLUME:
 			argv[5] = "--step";
@@ -107,7 +113,8 @@ int rrd_create(RRDType type, char const * filename)
 			argv[9] = RRD_AVERAGE_DAY;
 			argv[10] = RRD_AVERAGE_WEEK;
 			argv[11] = RRD_AVERAGE_4WEEK;
-			argv[12] = NULL;
+			argv[12] = RRD_AVERAGE_YEAR;
+			argv[13] = NULL;
 			break;
 		default:
 			/* FIXME implement */
