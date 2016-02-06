@@ -95,6 +95,16 @@ int rrd_create(RRDType type, char const * filename)
 			argv[11] = RRD_AVERAGE_YEAR;
 			argv[12] = NULL;
 			break;
+		case RRDTYPE_UPGRADES:
+			argv[5] = "--step";
+			argv[6] = "300";
+			argv[7] = "DS:upgrades:GAUGE:600:0:U";
+			argv[8] = RRD_AVERAGE_DAY;
+			argv[9] = RRD_AVERAGE_WEEK;
+			argv[10] = RRD_AVERAGE_4WEEK;
+			argv[11] = RRD_AVERAGE_YEAR;
+			argv[12] = NULL;
+			break;
 		case RRDTYPE_USERS:
 			argv[5] = "--step";
 			argv[6] = "300";

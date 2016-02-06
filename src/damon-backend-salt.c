@@ -32,7 +32,8 @@
 /* damon_refresh */
 typedef enum _SaltFunction
 {
-	SF_STATUS_ALL_STATUS = 0,
+	SF_PKG_LIST_UPGRADES = 0,
+	SF_STATUS_ALL_STATUS,
 	SF_STATUS_PROCS
 } SaltFunction;
 #define SF_LAST SF_STATUS_PROCS
@@ -47,10 +48,13 @@ static int _refresh_parse_hostname_diskusage_volume(DaMon * damon,
 		char const * hostname, char const * volume, json_t * json);
 static int _refresh_parse_hostname_loadavg(DaMon * damon, char const * hostname,
 		json_t * json);
+static int _refresh_parse_hostname_pkg_list_upgrades(DaMon * damon,
+		char const * hostname, json_t * json);
 static int _refresh_parse_hostname_procs(DaMon * damon, char const * hostname,
 		json_t * json);
 static int _refresh_parse_hostname_w(DaMon * damon, char const * hostname,
 		json_t * json);
+static int _refresh_parse_pkg_list_upgrades(DaMon * damon, json_t * json);
 static int _refresh_parse_status_all_status(DaMon * damon, json_t * json);
 static int _refresh_parse_status_procs(DaMon * damon, json_t * json);
 
@@ -59,6 +63,8 @@ int damon_refresh(DaMon * damon)
 #ifdef DEBUG
 	fprintf(stderr, "DEBUG: %s()\n", __func__);
 #endif
+	_refresh_salt(damon, _refresh_parse_pkg_list_upgrades,
+			SF_PKG_LIST_UPGRADES);
 	_refresh_salt(damon, _refresh_parse_status_all_status,
 			SF_STATUS_ALL_STATUS);
 	_refresh_salt(damon, _refresh_parse_status_procs,
@@ -71,6 +77,7 @@ static int _refresh_salt(DaMon * damon,
 		SaltFunction function, ...)
 {
 	char * functions[SF_COUNT] = {
+		SALT " --out=json '*' pkg.list_upgrades",
 		SALT " --out=json '*' status.all_status",
 		SALT " --out=json '*' status.procs"
 	};
@@ -195,6 +202,30 @@ static int _refresh_parse_hostname_loadavg(DaMon * damon, char const * hostname,
 	return ret;
 }
 
+static int _refresh_parse_hostname_pkg_list_upgrades(DaMon * damon,
+		char const * hostname, json_t * json)
+{
+	int ret;
+	uint64_t count = 0;
+	char const * key;
+	json_t * value;
+	char * rrd;
+
+#ifdef DEBUG
+	fprintf(stderr, "DEBUG: %s(\"%s\", %d)\n", __func__, hostname,
+			json_typeof(json));
+#endif
+	if(!json_is_object(json))
+		return -1;
+	json_object_foreach(json, key, value)
+		count++;
+	if((rrd = string_new_append(hostname, "/upgrades.rrd", NULL)) == NULL)
+		return -1;
+	ret = damon_update(damon, RRDTYPE_UPGRADES, rrd, 1, count);
+	string_delete(rrd);
+	return ret;
+}
+
 static int _refresh_parse_hostname_procs(DaMon * damon, char const * hostname,
 		json_t * json)
 {
@@ -241,6 +272,31 @@ static int _refresh_parse_hostname_w(DaMon * damon, char const * hostname,
 	ret = damon_update(damon, RRDTYPE_USERS, rrd, 1, count);
 	string_delete(rrd);
 	return ret;
+}
+
+static int _refresh_parse_pkg_list_upgrades(DaMon * damon, json_t * json)
+{
+	char const * hostname;
+	json_t * value;
+
+	if(!json_is_object(json))
+		return -1;
+	json_object_foreach(json, hostname, value)
+	{
+#ifdef DEBUG
+		fprintf(stderr, "DEBUG: hostname: %s\n", hostname);
+#endif
+		/* XXX report errors */
+		if(string_find(hostname, "/") != NULL
+				|| strcmp(hostname, ".") == 0
+				|| strcmp(hostname, "..") == 0)
+			return -1;
+		if(!json_is_object(value))
+			return -1;
+		_refresh_parse_hostname_pkg_list_upgrades(damon, hostname,
+				value);
+	}
+	return 0;
 }
 
 static int _refresh_parse_status_all_status(DaMon * damon, json_t * json)
