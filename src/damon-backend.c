@@ -15,4 +15,8 @@
 
 
 
-#include "damon-backend-app.c"
+#ifdef DAMON_BACKEND_SALT
+# include "damon-backend-salt.c"
+#else
+# include "damon-backend-app.c"
+#endif
