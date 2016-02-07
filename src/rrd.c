@@ -48,6 +48,18 @@
 #ifndef RRD_AVERAGE_YEAR
 # define RRD_AVERAGE_YEAR	"RRA:AVERAGE:" RRD_XFF ":288:8640"
 #endif
+#ifndef RRD_MAX_DAY
+# define RRD_MAX_DAY		"RRA:MAX:" RRD_XFF ":1:1440"
+#endif
+#ifndef RRD_MAX_WEEK
+# define RRD_MAX_WEEK		"RRA:MAX:" RRD_XFF ":2:2160"
+#endif
+#ifndef RRD_MAX_4WEEK
+# define RRD_MAX_4WEEK		"RRA:MAX:" RRD_XFF ":8:4320"
+#endif
+#ifndef RRD_MAX_YEAR
+# define RRD_MAX_YEAR		"RRA:MAX:" RRD_XFF ":104:8640"
+#endif
 
 
 /* RRD */
@@ -66,7 +78,7 @@ static int _create_directories(char const * filename);
 int rrd_create(RRDType type, char const * rrdcached, char const * filename)
 {
 	int ret;
-	char * argv[18] = { RRDTOOL, "create", NULL, "--start", NULL };
+	char * argv[22] = { RRDTOOL, "create", NULL, "--start", NULL };
 	size_t i = 5;
 
 	/* create parent directories */
@@ -90,6 +102,10 @@ int rrd_create(RRDType type, char const * rrdcached, char const * filename)
 			argv[i++] = RRD_AVERAGE_WEEK;
 			argv[i++] = RRD_AVERAGE_4WEEK;
 			argv[i++] = RRD_AVERAGE_YEAR;
+			argv[i++] = RRD_MAX_DAY;
+			argv[i++] = RRD_MAX_WEEK;
+			argv[i++] = RRD_MAX_4WEEK;
+			argv[i++] = RRD_MAX_YEAR;
 			break;
 		case RRDTYPE_PROCS:
 			argv[i++] = "--step";
@@ -99,6 +115,10 @@ int rrd_create(RRDType type, char const * rrdcached, char const * filename)
 			argv[i++] = RRD_AVERAGE_WEEK;
 			argv[i++] = RRD_AVERAGE_4WEEK;
 			argv[i++] = RRD_AVERAGE_YEAR;
+			argv[i++] = RRD_MAX_DAY;
+			argv[i++] = RRD_MAX_WEEK;
+			argv[i++] = RRD_MAX_4WEEK;
+			argv[i++] = RRD_MAX_YEAR;
 			break;
 		case RRDTYPE_UPGRADES:
 			argv[i++] = "--step";
@@ -108,6 +128,10 @@ int rrd_create(RRDType type, char const * rrdcached, char const * filename)
 			argv[i++] = RRD_AVERAGE_WEEK;
 			argv[i++] = RRD_AVERAGE_4WEEK;
 			argv[i++] = RRD_AVERAGE_YEAR;
+			argv[i++] = RRD_MAX_DAY;
+			argv[i++] = RRD_MAX_WEEK;
+			argv[i++] = RRD_MAX_4WEEK;
+			argv[i++] = RRD_MAX_YEAR;
 			break;
 		case RRDTYPE_USERS:
 			argv[i++] = "--step";
@@ -117,6 +141,10 @@ int rrd_create(RRDType type, char const * rrdcached, char const * filename)
 			argv[i++] = RRD_AVERAGE_WEEK;
 			argv[i++] = RRD_AVERAGE_4WEEK;
 			argv[i++] = RRD_AVERAGE_YEAR;
+			argv[i++] = RRD_MAX_DAY;
+			argv[i++] = RRD_MAX_WEEK;
+			argv[i++] = RRD_MAX_4WEEK;
+			argv[i++] = RRD_MAX_YEAR;
 			break;
 		case RRDTYPE_VOLUME:
 			argv[i++] = "--step";
@@ -127,6 +155,10 @@ int rrd_create(RRDType type, char const * rrdcached, char const * filename)
 			argv[i++] = RRD_AVERAGE_WEEK;
 			argv[i++] = RRD_AVERAGE_4WEEK;
 			argv[i++] = RRD_AVERAGE_YEAR;
+			argv[i++] = RRD_MAX_DAY;
+			argv[i++] = RRD_MAX_WEEK;
+			argv[i++] = RRD_MAX_4WEEK;
+			argv[i++] = RRD_MAX_YEAR;
 			break;
 		default:
 			/* unsupported graph */
