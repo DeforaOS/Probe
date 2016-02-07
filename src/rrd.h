@@ -35,10 +35,11 @@ typedef enum _RRDType
 
 
 /* functions */
-int rrd_create(RRDType type, char const * filename);
+int rrd_create(RRDType type, char const * rrdcached, char const * filename);
 
-int rrd_update(RRDType type, char const * filename, int args_cnt, ...);
-int rrd_updatev(RRDType type, char const * filename,
+int rrd_update(RRDType type, char const * rrdcached, char const * filename,
+		int args_cnt, ...);
+int rrd_updatev(RRDType type, char const * rrdcached, char const * filename,
 		int args_cnt, va_list args);
 
 #endif /* !DAMON_RRD_H */

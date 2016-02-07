@@ -55,6 +55,7 @@ typedef struct _Host
 struct _DaMon
 {
 	char const * prefix;
+	char const * rrdcached;
 	unsigned int refresh;
 	Host * hosts;
 	unsigned int hosts_cnt;
@@ -161,7 +162,7 @@ int damon_update(DaMon * damon, RRDType type, char const * filename,
 			== NULL)
 		return -1;
 	va_start(args, args_cnt);
-	ret = rrd_updatev(type, path, args_cnt, args);
+	ret = rrd_updatev(type, damon->rrdcached, path, args_cnt, args);
 	va_end(args);
 	string_delete(path);
 	return ret;
@@ -203,6 +204,7 @@ static int _init_config(DaMon * damon, char const * filename)
 	if((config = config_new()) == NULL)
 		return 1;
 	damon->prefix = NULL;
+	damon->rrdcached = NULL;
 	damon->refresh = DAMON_DEFAULT_REFRESH;
 	damon->hosts = NULL;
 	damon->hosts_cnt = 0;
@@ -218,6 +220,13 @@ static int _init_config(DaMon * damon, char const * filename)
 		damon->prefix = ".";
 	if((damon->prefix = strdup(damon->prefix)) == NULL)
 	{
+		config_delete(config);
+		return -1;
+	}
+	if((p = config_get(config, "", "rrdcached")) != NULL
+			&& (damon->rrdcached = strdup(p)) == NULL)
+	{
+		free(damon->prefix);
 		config_delete(config);
 		return -1;
 	}
@@ -353,5 +362,6 @@ static void _damon_destroy(DaMon * damon)
 	}
 	event_delete(damon->event);
 	free(damon->hosts);
+	free(damon->rrdcached);
 	free(damon->prefix);
 }

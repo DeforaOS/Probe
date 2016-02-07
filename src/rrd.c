@@ -63,7 +63,7 @@ static char * _rrd_timestamp(off_t offset);
 /* rrd_create */
 static int _create_directories(char const * filename);
 
-int rrd_create(RRDType type, char const * filename)
+int rrd_create(RRDType type, char const * rrdcached, char const * filename)
 {
 	int ret;
 	char * argv[16] = { RRDTOOL, "create", NULL, "--start", NULL, NULL };
@@ -167,27 +167,30 @@ static int _create_directories(char const * filename)
 
 
 /* rrd_update */
-int rrd_update(RRDType type, char const * filename, int args_cnt, ...)
+int rrd_update(RRDType type, char const * rrdcached, char const * filename, int
+		args_cnt, ...)
 {
 	int ret;
 	va_list args;
 
 	va_start(args, args_cnt);
-	ret = rrd_updatev(type, filename, args_cnt, args);
+	ret = rrd_updatev(type, rrdcached, filename, args_cnt, args);
 	va_end(args);
 	return ret;
 }
 
 
 /* rrd_updatev */
-int rrd_updatev(RRDType type, char const * filename, int args_cnt, va_list args)
+int rrd_updatev(RRDType type, char const * rrdcached, char const * filename,
+		int args_cnt, va_list args)
 {
 	struct stat st;
-	char * argv[] = { RRDTOOL, "update", NULL, NULL, NULL };
+	char * argv[] = { RRDTOOL, "update", NULL, NULL, NULL, NULL, NULL };
+	size_t i = 3;
 	struct timeval tv;
 	size_t s;
 	int pos;
-	int i;
+	int arg;
 	int ret;
 
 #ifdef DEBUG
@@ -198,7 +201,7 @@ int rrd_updatev(RRDType type, char const * filename, int args_cnt, va_list args)
 	{
 		if(errno != ENOENT)
 			return _rrd_perror(filename, -errno);
-		if(rrd_create(type, filename) != 0)
+		if(rrd_create(type, rrdcached, filename) != 0)
 			return -1;
 	}
 	/* prepare the parameters */
@@ -206,19 +209,32 @@ int rrd_updatev(RRDType type, char const * filename, int args_cnt, va_list args)
 		return _rrd_perror("gettimeofday", -errno);
 	if((argv[2] = string_new(filename)) == NULL)
 		return 1;
-	s = (args_cnt + 1) * 12;
-	if((argv[3] = malloc(s)) == NULL)
+	if(rrdcached != NULL)
 	{
+		argv[i++] = "--daemon";
+		if((argv[i++] = string_new(rrdcached)) == NULL)
+		{
+			string_delete(argv[2]);
+			return 1;
+		}
+	}
+	s = (args_cnt + 1) * 12;
+	if((argv[i] = malloc(s)) == NULL)
+	{
+		if(rrdcached != NULL)
+			string_delete(argv[4]);
 		string_delete(argv[2]);
 		return _rrd_perror(NULL, -errno);
 	}
-	pos = snprintf(argv[3], s, "%ld", tv.tv_sec);
-	for(i = 0; i < args_cnt; i++)
-		pos += snprintf(&argv[3][pos], s - pos, ":%"PRIu64,
+	pos = snprintf(argv[i], s, "%ld", tv.tv_sec);
+	for(arg = 0; arg < args_cnt; arg++)
+		pos += snprintf(&argv[i][pos], s - pos, ":%"PRIu64,
 				va_arg(args, uint64_t));
 	/* update the database */
 	ret = _rrd_exec(argv);
-	free(argv[3]);
+	free(argv[i]);
+	if(rrdcached != NULL)
+		string_delete(argv[4]);
 	string_delete(argv[2]);
 	return ret;
 }
