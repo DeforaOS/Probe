@@ -54,8 +54,8 @@ typedef struct _Host
 
 struct _DaMon
 {
-	char const * prefix;
-	char const * rrdcached;
+	char * prefix;
+	char * rrdcached;
 	unsigned int refresh;
 	Host * hosts;
 	unsigned int hosts_cnt;
@@ -216,9 +216,9 @@ static int _init_config(DaMon * damon, char const * filename)
 		config_delete(config);
 		return -1;
 	}
-	if((damon->prefix = config_get(config, "", "prefix")) == NULL)
-		damon->prefix = ".";
-	if((damon->prefix = strdup(damon->prefix)) == NULL)
+	if((p = config_get(config, "", "prefix")) == NULL)
+		p = ".";
+	if((damon->prefix = string_new(p)) == NULL)
 	{
 		config_delete(config);
 		return -1;
@@ -226,7 +226,7 @@ static int _init_config(DaMon * damon, char const * filename)
 	if((p = config_get(config, "", "rrdcached")) != NULL
 			&& (damon->rrdcached = strdup(p)) == NULL)
 	{
-		free(damon->prefix);
+		string_delete(damon->prefix);
 		config_delete(config);
 		return -1;
 	}
