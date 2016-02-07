@@ -146,6 +146,13 @@ int damon_perror(char const * message, int ret)
 }
 
 
+/* damon_serror */
+int damon_serror(void)
+{
+	return error_print(PROGNAME);
+}
+
+
 /* damon_update */
 int damon_update(DaMon * damon, RRDType type, char const * filename,
 		int args_cnt, ...)
@@ -165,6 +172,8 @@ int damon_update(DaMon * damon, RRDType type, char const * filename,
 	ret = rrd_updatev(type, damon->rrdcached, path, args_cnt, args);
 	va_end(args);
 	string_delete(path);
+	if(ret != 0)
+		damon_serror();
 	return ret;
 }
 

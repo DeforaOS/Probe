@@ -38,6 +38,7 @@ Event * damon_get_event(DaMon * damon);
 /* useful */
 int damon_error(char const * message, int error);
 int damon_perror(char const * message, int error);
+int damon_serror(void);
 
 int damon_refresh(DaMon * damon);
 int damon_update(DaMon * damon, RRDType type, char const * filename,
