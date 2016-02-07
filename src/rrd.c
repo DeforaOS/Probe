@@ -66,12 +66,18 @@ static int _create_directories(char const * filename);
 int rrd_create(RRDType type, char const * rrdcached, char const * filename)
 {
 	int ret;
-	char * argv[16] = { RRDTOOL, "create", NULL, "--start", NULL, NULL };
+	char * argv[18] = { RRDTOOL, "create", NULL, "--start", NULL };
 	size_t i = 5;
 
 	/* create parent directories */
 	if(_create_directories(filename) != 0)
 		return -1;
+	if(rrdcached != NULL)
+	{
+		argv[i++] = "--daemon";
+		if((argv[i++] = string_new(rrdcached)) == NULL)
+			return -1;
+	}
 	switch(type)
 	{
 		case RRDTYPE_LOAD:
@@ -123,7 +129,9 @@ int rrd_create(RRDType type, char const * rrdcached, char const * filename)
 			argv[i++] = RRD_AVERAGE_YEAR;
 			break;
 		default:
-			/* FIXME implement */
+			/* unsupported graph */
+			if(rrdcached != NULL)
+				string_delete(argv[6]);
 			return -1;
 	}
 	argv[2] = string_new(filename);
@@ -134,6 +142,8 @@ int rrd_create(RRDType type, char const * rrdcached, char const * filename)
 		ret = _rrd_exec(argv);
 	else
 		ret = -1;
+	if(rrdcached != NULL)
+		string_delete(argv[6]);
 	string_delete(argv[4]);
 	string_delete(argv[2]);
 	return ret;
