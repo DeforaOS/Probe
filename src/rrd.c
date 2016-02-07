@@ -67,6 +67,7 @@ int rrd_create(RRDType type, char const * filename)
 {
 	int ret;
 	char * argv[16] = { RRDTOOL, "create", NULL, "--start", NULL, NULL };
+	size_t i = 5;
 
 	/* create parent directories */
 	if(_create_directories(filename) != 0)
@@ -74,57 +75,52 @@ int rrd_create(RRDType type, char const * filename)
 	switch(type)
 	{
 		case RRDTYPE_LOAD:
-			argv[5] = "--step";
-			argv[6] = "300";
-			argv[7] = "DS:load1:GAUGE:600:0:U";
-			argv[8] = "DS:load5:GAUGE:600:0:U";
-			argv[9] = "DS:load15:GAUGE:600:0:U";
-			argv[10] = RRD_AVERAGE_DAY;
-			argv[11] = RRD_AVERAGE_WEEK;
-			argv[12] = RRD_AVERAGE_4WEEK;
-			argv[13] = RRD_AVERAGE_YEAR;
-			argv[14] = NULL;
+			argv[i++] = "--step";
+			argv[i++] = "300";
+			argv[i++] = "DS:load1:GAUGE:600:0:U";
+			argv[i++] = "DS:load5:GAUGE:600:0:U";
+			argv[i++] = "DS:load15:GAUGE:600:0:U";
+			argv[i++] = RRD_AVERAGE_DAY;
+			argv[i++] = RRD_AVERAGE_WEEK;
+			argv[i++] = RRD_AVERAGE_4WEEK;
+			argv[i++] = RRD_AVERAGE_YEAR;
 			break;
 		case RRDTYPE_PROCS:
-			argv[5] = "--step";
-			argv[6] = "300";
-			argv[7] = "DS:procs:GAUGE:600:0:U";
-			argv[8] = RRD_AVERAGE_DAY;
-			argv[9] = RRD_AVERAGE_WEEK;
-			argv[10] = RRD_AVERAGE_4WEEK;
-			argv[11] = RRD_AVERAGE_YEAR;
-			argv[12] = NULL;
+			argv[i++] = "--step";
+			argv[i++] = "300";
+			argv[i++] = "DS:procs:GAUGE:600:0:U";
+			argv[i++] = RRD_AVERAGE_DAY;
+			argv[i++] = RRD_AVERAGE_WEEK;
+			argv[i++] = RRD_AVERAGE_4WEEK;
+			argv[i++] = RRD_AVERAGE_YEAR;
 			break;
 		case RRDTYPE_UPGRADES:
-			argv[5] = "--step";
-			argv[6] = "300";
-			argv[7] = "DS:upgrades:GAUGE:600:0:U";
-			argv[8] = RRD_AVERAGE_DAY;
-			argv[9] = RRD_AVERAGE_WEEK;
-			argv[10] = RRD_AVERAGE_4WEEK;
-			argv[11] = RRD_AVERAGE_YEAR;
-			argv[12] = NULL;
+			argv[i++] = "--step";
+			argv[i++] = "300";
+			argv[i++] = "DS:upgrades:GAUGE:600:0:U";
+			argv[i++] = RRD_AVERAGE_DAY;
+			argv[i++] = RRD_AVERAGE_WEEK;
+			argv[i++] = RRD_AVERAGE_4WEEK;
+			argv[i++] = RRD_AVERAGE_YEAR;
 			break;
 		case RRDTYPE_USERS:
-			argv[5] = "--step";
-			argv[6] = "300";
-			argv[7] = "DS:users:GAUGE:600:0:U";
-			argv[8] = RRD_AVERAGE_DAY;
-			argv[9] = RRD_AVERAGE_WEEK;
-			argv[10] = RRD_AVERAGE_4WEEK;
-			argv[11] = RRD_AVERAGE_YEAR;
-			argv[12] = NULL;
+			argv[i++] = "--step";
+			argv[i++] = "300";
+			argv[i++] = "DS:users:GAUGE:600:0:U";
+			argv[i++] = RRD_AVERAGE_DAY;
+			argv[i++] = RRD_AVERAGE_WEEK;
+			argv[i++] = RRD_AVERAGE_4WEEK;
+			argv[i++] = RRD_AVERAGE_YEAR;
 			break;
 		case RRDTYPE_VOLUME:
-			argv[5] = "--step";
-			argv[6] = "300";
-			argv[7] = "DS:used:GAUGE:600:0:U";
-			argv[8] = "DS:total:GAUGE:600:0:U";
-			argv[9] = RRD_AVERAGE_DAY;
-			argv[10] = RRD_AVERAGE_WEEK;
-			argv[11] = RRD_AVERAGE_4WEEK;
-			argv[12] = RRD_AVERAGE_YEAR;
-			argv[13] = NULL;
+			argv[i++] = "--step";
+			argv[i++] = "300";
+			argv[i++] = "DS:used:GAUGE:600:0:U";
+			argv[i++] = "DS:total:GAUGE:600:0:U";
+			argv[i++] = RRD_AVERAGE_DAY;
+			argv[i++] = RRD_AVERAGE_WEEK;
+			argv[i++] = RRD_AVERAGE_4WEEK;
+			argv[i++] = RRD_AVERAGE_YEAR;
 			break;
 		default:
 			/* FIXME implement */
@@ -132,6 +128,7 @@ int rrd_create(RRDType type, char const * filename)
 	}
 	argv[2] = string_new(filename);
 	argv[4] = _rrd_timestamp(-1);
+	argv[i++] = NULL;
 	/* create the database */
 	if(argv[2] != NULL && argv[4] != NULL)
 		ret = _rrd_exec(argv);
