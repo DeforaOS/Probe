@@ -353,4 +353,5 @@ static void _damon_destroy(DaMon * damon)
 	}
 	event_delete(damon->event);
 	free(damon->hosts);
+	free(damon->prefix);
 }
