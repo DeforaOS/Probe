@@ -64,11 +64,7 @@ struct _DaMon
 
 
 /* constants */
-#ifdef DEBUG
-# define DAMON_DEFAULT_REFRESH	10
-#else
-# define DAMON_DEFAULT_REFRESH	300
-#endif
+#define DAMON_DEFAULT_REFRESH	60
 
 
 /* prototypes */
