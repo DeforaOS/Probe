@@ -696,7 +696,7 @@ static int _probe_timeout(Probe * probe)
 uint32_t Probe_uptime(Probe * probe, AppServerClient * asc)
 {
 #if defined(DEBUG)
-	printf("%s%ld%s", "Uptime: ", probe->sysinfo.uptime, "\n");
+	fprintf(stderr, "%s() %ld\n", __func__, probe->sysinfo.uptime);
 #endif
 	return probe->sysinfo.uptime;
 }
@@ -707,9 +707,8 @@ int32_t Probe_load(Probe * probe, AppServerClient * asc, uint32_t * load1,
 		uint32_t * load5, uint32_t * load15)
 {
 #if defined(DEBUG)
-	printf("%s%lu%s%lu%s%lu%s", "Load 1: ", probe->sysinfo.loads[0],
-			", Load 5: ", probe->sysinfo.loads[1],
-			", Load 15: ", probe->sysinfo.loads[2], "\n");
+	fprintf(stderr, "%s() %lu %lu %lu\n", __func__, probe->sysinfo.loads[0],
+			probe->sysinfo.loads[1], probe->sysinfo.loads[2]);
 #endif
 	*load1 = probe->sysinfo.loads[0];
 	*load5 = probe->sysinfo.loads[1];
@@ -723,11 +722,10 @@ int32_t Probe_ram(Probe * probe, AppServerClient * asc, uint32_t * total,
 		uint32_t * free, uint32_t * shared, uint32_t * buffer)
 {
 #if defined(DEBUG)
-	printf("%s%lu%s%lu%s%lu%s%lu%s",
-			"Total RAM: ", probe->sysinfo.totalram,
-			", Free RAM: ", probe->sysinfo.freeram,
-			", Shared RAM: ", probe->sysinfo.sharedram,
-			", Buffered RAM: ", probe->sysinfo.bufferram, "\n");
+	fprintf(stderr, "%s() total %lu, free %lu, shared %lu, buffered %lu\n",
+			__func__, probe->sysinfo.totalram,
+			probe->sysinfo.freeram, probe->sysinfo.sharedram,
+			probe->sysinfo.bufferram);
 #endif
 	*total = probe->sysinfo.totalram;
 	*free = probe->sysinfo.freeram;
@@ -742,8 +740,9 @@ int32_t Probe_swap(Probe * probe, AppServerClient * asc, uint32_t * total,
 		uint32_t * free)
 {
 #if defined(DEBUG)
-	printf("%s%lu%s", "Total swap: ", probe->sysinfo.totalswap, "\n");
-	printf("%s%lu%s", "Free swap: ", probe->sysinfo.freeswap, "\n");
+	fprintf(stderr, "%s() %lu/%lu\n", __func__,
+			probe->sysinfo.totalswap - probe->sysinfo.freeswap,
+			probe->sysinfo.totalswap);
 #endif
 	*total = probe->sysinfo.totalswap;
 	*free = probe->sysinfo.freeswap;
@@ -755,7 +754,7 @@ int32_t Probe_swap(Probe * probe, AppServerClient * asc, uint32_t * total,
 uint32_t Probe_procs(Probe * probe, AppServerClient * asc)
 {
 #if defined(DEBUG)
-	printf("%s%u%s", "Procs: ", probe->sysinfo.procs, "\n");
+	fprintf(stderr, "%s() %u\n", __func__, probe->sysinfo.procs);
 #endif
 	return probe->sysinfo.procs;
 }
@@ -765,7 +764,7 @@ uint32_t Probe_procs(Probe * probe, AppServerClient * asc)
 uint32_t Probe_users(Probe * probe, AppServerClient * asc)
 {
 #if defined(DEBUG)
-	printf("%s%u%s", "Users: ", probe->users, "\n");
+	fprintf(stderr, "%s() %u\n", __func__, probe->users);
 #endif
 	return probe->users;
 }
@@ -782,8 +781,8 @@ uint32_t Probe_ifrxbytes(Probe * probe, AppServerClient * asc,
 	if(i == probe->ifinfo_cnt)
 		return -1;
 #if defined(DEBUG)
-	printf("%s%s%s%u%s", "Interface ", probe->ifinfo[i].name, " RX: ",
-			probe->ifinfo[i].ibytes, "\n");
+	fprintf(stderr, "%s() %s %u\n", __func__, probe->ifinfo[i].name,
+			probe->ifinfo[i].ibytes);
 #endif
 	return probe->ifinfo[i].ibytes;
 }
@@ -800,8 +799,8 @@ uint32_t Probe_iftxbytes(Probe * probe, AppServerClient * asc,
 	if(i == probe->ifinfo_cnt)
 		return -1;
 #if defined(DEBUG)
-	printf("%s%s%s%u%s", "Interface ", probe->ifinfo[i].name, " TX: ",
-			probe->ifinfo[i].obytes, "\n");
+	fprintf(stderr, "%s() %s %u\n", __func__, probe->ifinfo[i].name,
+			probe->ifinfo[i].obytes);
 #endif
 	return probe->ifinfo[i].obytes;
 }
@@ -819,8 +818,8 @@ uint32_t Probe_voltotal(Probe * probe, AppServerClient * asc,
 	if(i == probe->volinfo_cnt)
 		return -1;
 #if defined(DEBUG)
-	printf("%s%s%s%lu%s", "Volume ", probe->volinfo[i].name, " total: ",
-			probe->volinfo[i].total, "\n");
+	fprintf(stderr, "%s() %s %lu\n", __func__, probe->volinfo[i].name,
+			probe->volinfo[i].total);
 #endif
 	return probe->volinfo[i].total * (probe->volinfo[i].block_size / 1024);
 }
@@ -838,8 +837,8 @@ uint32_t Probe_volfree(Probe * probe, AppServerClient * asc,
 	if(i == probe->volinfo_cnt)
 		return -1;
 #if defined(DEBUG)
-	printf("%s%s%s%lu%s", "Volume ", probe->volinfo[i].name, " free: ",
-			probe->volinfo[i].free, "\n");
+	fprintf(stderr, "%s() %s %lu\n", __func__, probe->volinfo[i].name,
+			probe->volinfo[i].free);
 #endif
 	return probe->volinfo[i].free * (probe->volinfo[i].block_size / 1024);
 }
