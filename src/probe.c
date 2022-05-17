@@ -310,7 +310,7 @@ static int _ifinfo_linux(struct ifinfo ** dev)
 		return -1;
 	for(i = 0; fgets(buf, sizeof(buf), fp) != NULL; i++)
 	{
-		len = string_length(buf);
+		len = string_get_length(buf);
 		if(buf[len - 1] != '\n')
 		{
 			ret = -1;
@@ -471,7 +471,7 @@ static int _volinfo_linux(struct volinfo ** dev)
 		return _probe_perror("/etc/mtab", -1);
 	for(i = 0; fgets(buf, sizeof(buf), fp) != NULL; i++)
 	{
-		len = string_length(buf);
+		len = string_get_length(buf);
 		if(buf[len-1] != '\n')
 		{
 			ret = -1;

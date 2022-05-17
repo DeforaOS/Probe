@@ -83,7 +83,7 @@ int damon_refresh(DaMon * damon)
 			if((ac = _refresh_connect(&hosts[i], damon->event))
 					== NULL)
 				continue;
-		if((p = realloc(rrd, string_length(hosts[i].hostname) + 12))
+		if((p = realloc(rrd, string_get_length(hosts[i].hostname) + 12))
 				== NULL) /* XXX avoid this constant */
 			break;
 		rrd = p;
