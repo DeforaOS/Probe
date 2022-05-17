@@ -36,22 +36,22 @@
 
 #if defined(__linux__)
 # define _sysinfo_linux			_sysinfo
-# define _userinfo_generic		_userinfo
+# define _userinfo_utmpx		_userinfo
 # define _ifinfo_linux			_ifinfo
 # define _volinfo_linux			_volinfo
 #elif defined(__FreeBSD__)
 # define _sysinfo_generic		_sysinfo
-# define _userinfo_none			_userinfo
-# define _ifinfo_generic		_ifinfo
+# define _userinfo_utmpx		_userinfo
+# define _ifinfo_bsd			_ifinfo
 # define _volinfo_linux			_volinfo
-#elif defined(__NetBSD__) /* FIXME Other BSDs not tested */
+#elif defined(__NetBSD__)
 # define _sysinfo_generic		_sysinfo
-# define _userinfo_generic		_userinfo
+# define _userinfo_utmpx		_userinfo
 # define _ifinfo_bsd			_ifinfo
 # define _volinfo_bsd			_volinfo
 #else
 # define _sysinfo_generic		_sysinfo
-# define _userinfo_generic		_userinfo
+# define _userinfo_utmpx		_userinfo
 # define _ifinfo_generic		_ifinfo
 # define _volinfo_generic		_volinfo
 #endif
@@ -71,10 +71,15 @@ static int _probe_perror(char const * message, int ret);
 #endif /* defined(_sysinfo_linux) */
 
 #if defined(_sysinfo_generic)
-# if defined(__NetBSD__) /* FIXME Other BSDs not tested */
+# if defined(__FreeBSD__)
+#  define _sysinfo_uptime_generic	_sysinfo_uptime
+#  define _sysinfo_loads_generic	_sysinfo_loads
+#  define _sysinfo_ram_generic		_sysinfo_ram
+#  define _sysinfo_procs_generic	_sysinfo_procs
+# elif defined(__NetBSD__)
 #  define _sysinfo_uptime_sysctl	_sysinfo_uptime
 #  define _sysinfo_loads_sysctl		_sysinfo_loads
-#  define _sysinfo_ram_sysctl		_sysinfo_ram
+#  define _sysinfo_ram_sysctl_uvm	_sysinfo_ram
 #  define _sysinfo_procs_sysctl		_sysinfo_procs
 # else
 #  define _sysinfo_uptime_generic	_sysinfo_uptime
@@ -111,8 +116,10 @@ static int _sysinfo_generic(struct sysinfo * info)
 }
 
 /* sysinfo sysctl */
-# if defined(_sysinfo_uptime_sysctl) || defined(_sysinfo_loads_sysctl) \
-	|| defined(_sysinfo_ram_sysctl) || defined(_sysinfo_procs_sysctl)
+# if defined(_sysinfo_uptime_sysctl) \
+	|| defined(_sysinfo_loads_sysctl) \
+	|| defined(_sysinfo_ram_sysctl_uvm) \
+	|| defined(_sysinfo_procs_sysctl)
 #  include <sys/param.h>
 #  define _KMEMUSER /* XXX for NetBSD */
 #  include <sys/sysctl.h>
@@ -160,9 +167,9 @@ static int _sysinfo_loads_sysctl(struct sysinfo * info)
 }
 # endif
 
-# if defined(_sysinfo_ram_sysctl)
+# if defined(_sysinfo_ram_sysctl_uvm)
 #  include <uvm/uvm.h>
-static int _sysinfo_ram_sysctl(struct sysinfo * info)
+static int _sysinfo_ram_sysctl_uvm(struct sysinfo * info)
 {
 	int mib[2];
 	struct uvmexp ue;
@@ -257,9 +264,15 @@ static int _sysinfo_procs_generic(struct sysinfo * info)
 
 
 /* userinfo */
-#if defined(_userinfo_generic)
-#  include <utmpx.h>
-static int _userinfo_generic(unsigned int * userinfo)
+#if defined(_userinfo_none)
+static int _userinfo_none(unsigned int * userinfo)
+{
+	*userinfo = 0;
+	return 0;
+}
+#elif defined(_userinfo_utmpx)
+# include <utmpx.h>
+static int _userinfo_utmpx(unsigned int * userinfo)
 {
 	struct utmpx * ut;
 
@@ -267,12 +280,6 @@ static int _userinfo_generic(unsigned int * userinfo)
 		if(ut->ut_type == USER_PROCESS)
 			(*userinfo)++;
 	endutxent();
-	return 0;
-}
-#elif defined(_userinfo_none)
-static int _userinfo_none(unsigned int * userinfo)
-{
-	*userinfo = 0;
 	return 0;
 }
 #endif
