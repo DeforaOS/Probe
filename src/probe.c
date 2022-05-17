@@ -910,5 +910,5 @@ int main(int argc, char * argv[])
 		}
 	if(optind != argc)
 		return _usage();
-	return _probe(options) == 0 ? 0 : 2;
+	return (_probe(options) == 0) ? 0 : 2;
 }
