@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <limits.h>
 #include <errno.h>
 #include <System.h>
 #include <System/App.h>
@@ -252,10 +253,28 @@ static int _sysinfo_ram_generic(struct sysinfo * info)
 # endif
 
 # if defined(_sysinfo_procs_generic)
-#  warning Generic process reporting is not supported
+#  include <dirent.h>
 static int _sysinfo_procs_generic(struct sysinfo * info)
 {
+	DIR * dir;
+	struct dirent * de;
+	long l;
+
+
 	info->procs = 0;
+	if((dir = opendir("/proc")) == NULL)
+		return _probe_perror("/proc", -1);
+	while((de = readdir(dir)) != NULL)
+	{
+#ifdef DT_DIR
+		if(de->d_type != DT_DIR)
+			continue;
+#endif
+		if((l = strtol(de->d_name, NULL, 10)) <= 0)
+			continue;
+		info->procs++;
+	}
+	closedir(dir);
 	return 0;
 }
 # endif
