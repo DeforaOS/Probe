@@ -23,8 +23,8 @@
 #include "damon.h"
 
 /* constants */
-#ifndef PROGNAME
-# define PROGNAME	"DaMon"
+#ifndef PROGNAME_DAMON
+# define PROGNAME_DAMON	"DaMon"
 #endif
 
 #define DAMON_SEP	'/'
@@ -104,7 +104,8 @@ int damon_refresh(DaMon * damon)
 	}
 	free(rrd);
 	if(ac != NULL)
-		error_set_print(PROGNAME, 1, "%s", "refresh: An error occured");
+		error_set_print(PROGNAME_DAMON, 1, "%s",
+				"refresh: An error occured");
 	return 0;
 }
 
@@ -114,7 +115,7 @@ static AppClient * _refresh_connect(Host * host, Event * event)
 		return NULL;
 	if((host->appclient = appclient_new_event(NULL, "Probe", NULL, event))
 			== NULL)
-		error_print(PROGNAME);
+		error_print(PROGNAME_DAMON);
 	return host->appclient;
 }
 
@@ -123,7 +124,7 @@ static int _refresh_uptime(AppClient * ac, Host * host, char * rrd)
 	int32_t ret;
 
 	if(appclient_call(ac, (void **)&ret, "uptime") != 0)
-		return error_print(PROGNAME);
+		return error_print(PROGNAME_DAMON);
 	sprintf(rrd, "%s%c%s", host->hostname, DAMON_SEP, "uptime.rrd");
 	damon_update(host->damon, RRDTYPE_UNKNOWN, rrd, 1, ret);
 	return 0;
@@ -136,7 +137,7 @@ static int _refresh_load(AppClient * ac, Host * host, char * rrd)
 
 	if(appclient_call(ac, (void **)&res, "load", &load[0], &load[1],
 				&load[2]) != 0)
-		return error_print(PROGNAME);
+		return error_print(PROGNAME_DAMON);
 	if(res != 0)
 		return 0;
 	sprintf(rrd, "%s%c%s", host->hostname, DAMON_SEP, "load.rrd");

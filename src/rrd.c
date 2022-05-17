@@ -27,8 +27,8 @@
 #include "rrd.h"
 
 /* constants */
-#ifndef PROGNAME
-# define PROGNAME		"DaMon"
+#ifndef PROGNAME_DAMON
+# define PROGNAME_DAMON		"DaMon"
 #endif
 #ifndef RRDTOOL
 # define RRDTOOL		"rrdtool"
@@ -196,7 +196,7 @@ static int _create_directories(char const * filename)
 		p[i] = '\0';
 		if(mkdir(p, 0777) != 0 && errno != EEXIST)
 		{
-			error_set_print(PROGNAME, -errno, "%s: %s", p,
+			error_set_print(PROGNAME_DAMON, -errno, "%s: %s", p,
 					strerror(errno));
 			ret = -1;
 			break;

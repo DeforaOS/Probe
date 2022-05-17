@@ -21,8 +21,8 @@
 #include "../config.h"
 
 /* constants */
-#ifndef PROGNAME
-# define PROGNAME	"DaMon"
+#ifndef PROGNAME_DAMON
+# define PROGNAME_DAMON	"DaMon"
 #endif
 
 
@@ -46,7 +46,7 @@ static int _damon(char const * config)
 		return 1;
 	event = damon_get_event(damon);
 	if(event_loop(event) != 0)
-		error_print(PROGNAME);
+		error_print(PROGNAME_DAMON);
 	damon_delete(damon);
 	return 1;
 }
@@ -55,7 +55,7 @@ static int _damon(char const * config)
 /* damon_usage */
 static int _damon_usage(void)
 {
-	fputs("Usage: " PROGNAME " [-f filename]\n"
+	fputs("Usage: " PROGNAME_DAMON " [-f filename]\n"
 "  -f\tConfiguration file to load\n", stderr);
 	return 1;
 }

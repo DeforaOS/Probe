@@ -35,8 +35,8 @@
 #ifndef SYSCONFDIR
 # define SYSCONFDIR	PREFIX "/etc"
 #endif
-#ifndef PROGNAME
-# define PROGNAME	"DaMon"
+#ifndef PROGNAME_DAMON
+# define PROGNAME_DAMON	"DaMon"
 #endif
 
 
@@ -129,14 +129,14 @@ Event * damon_get_event(DaMon * damon)
 /* damon_error */
 int damon_error(char const * message, int ret)
 {
-	return error_set_print(PROGNAME, ret, "%s", message);
+	return error_set_print(PROGNAME_DAMON, ret, "%s", message);
 }
 
 
 /* damon_perror */
 int damon_perror(char const * message, int ret)
 {
-	return error_set_print(PROGNAME, ret, "%s%s%s",
+	return error_set_print(PROGNAME_DAMON, ret, "%s%s%s",
 			(message != NULL) ? message : "",
 			(message != NULL) ? ": " : "", strerror(errno));
 }
@@ -145,7 +145,7 @@ int damon_perror(char const * message, int ret)
 /* damon_serror */
 int damon_serror(void)
 {
-	return error_print(PROGNAME);
+	return error_print(PROGNAME_DAMON);
 }
 
 
@@ -214,10 +214,10 @@ static int _init_config(DaMon * damon, char const * filename)
 	damon->hosts = NULL;
 	damon->hosts_cnt = 0;
 	if(filename == NULL)
-		filename = SYSCONFDIR "/" PROGNAME ".conf";
+		filename = SYSCONFDIR "/" PROGNAME_DAMON ".conf";
 	if(config_load(config, filename) != 0)
 	{
-		error_print(PROGNAME);
+		error_print(PROGNAME_DAMON);
 		config_delete(config);
 		return -1;
 	}

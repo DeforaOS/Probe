@@ -29,8 +29,8 @@
 #include "../data/Probe.h"
 #include "../config.h"
 
-#ifndef PROGNAME
-# define PROGNAME PACKAGE
+#ifndef PROGNAME_PROBE
+# define PROGNAME_PROBE PACKAGE
 #endif
 
 
@@ -652,7 +652,7 @@ static int _probe(AppServerOptions options)
 /* probe_error */
 static int _probe_error(int ret)
 {
-	error_print(PROGNAME);
+	error_print(PROGNAME_PROBE);
 	return ret;
 }
 
@@ -660,7 +660,7 @@ static int _probe_error(int ret)
 /* probe_perror */
 static int _probe_perror(char const * message, int ret)
 {
-	error_set_print(PROGNAME, ret, "%s%s%s", message ? message : "",
+	error_set_print(PROGNAME_PROBE, ret, "%s%s%s", message ? message : "",
 			message ? ": " : "", strerror(errno));
 	return ret;
 }
@@ -847,7 +847,7 @@ uint32_t Probe_volfree(Probe * probe, AppServerClient * asc,
 /* usage */
 static int _usage(void)
 {
-	fputs("Usage: " PROGNAME " [-R]\n", stderr);
+	fputs("Usage: " PROGNAME_PROBE " [-R]\n", stderr);
 	return 1;
 }
 
