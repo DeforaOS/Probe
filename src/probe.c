@@ -695,6 +695,8 @@ static int _probe_timeout(Probe * probe)
 /* Probe_uptime */
 uint32_t Probe_uptime(Probe * probe, AppServerClient * asc)
 {
+	(void) asc;
+
 #if defined(DEBUG)
 	fprintf(stderr, "%s() %ld\n", __func__, probe->sysinfo.uptime);
 #endif
@@ -706,6 +708,8 @@ uint32_t Probe_uptime(Probe * probe, AppServerClient * asc)
 int32_t Probe_load(Probe * probe, AppServerClient * asc, uint32_t * load1,
 		uint32_t * load5, uint32_t * load15)
 {
+	(void) asc;
+
 #if defined(DEBUG)
 	fprintf(stderr, "%s() %lu %lu %lu\n", __func__, probe->sysinfo.loads[0],
 			probe->sysinfo.loads[1], probe->sysinfo.loads[2]);
@@ -721,6 +725,8 @@ int32_t Probe_load(Probe * probe, AppServerClient * asc, uint32_t * load1,
 int32_t Probe_ram(Probe * probe, AppServerClient * asc, uint32_t * total,
 		uint32_t * free, uint32_t * shared, uint32_t * buffer)
 {
+	(void) asc;
+
 #if defined(DEBUG)
 	fprintf(stderr, "%s() total %lu, free %lu, shared %lu, buffered %lu\n",
 			__func__, probe->sysinfo.totalram,
@@ -739,6 +745,8 @@ int32_t Probe_ram(Probe * probe, AppServerClient * asc, uint32_t * total,
 int32_t Probe_swap(Probe * probe, AppServerClient * asc, uint32_t * total,
 		uint32_t * free)
 {
+	(void) asc;
+
 #if defined(DEBUG)
 	fprintf(stderr, "%s() %lu/%lu\n", __func__,
 			probe->sysinfo.totalswap - probe->sysinfo.freeswap,
@@ -753,6 +761,8 @@ int32_t Probe_swap(Probe * probe, AppServerClient * asc, uint32_t * total,
 /* Probe_procs */
 uint32_t Probe_procs(Probe * probe, AppServerClient * asc)
 {
+	(void) asc;
+
 #if defined(DEBUG)
 	fprintf(stderr, "%s() %u\n", __func__, probe->sysinfo.procs);
 #endif
@@ -763,6 +773,8 @@ uint32_t Probe_procs(Probe * probe, AppServerClient * asc)
 /* Probe_users */
 uint32_t Probe_users(Probe * probe, AppServerClient * asc)
 {
+	(void) asc;
+
 #if defined(DEBUG)
 	fprintf(stderr, "%s() %u\n", __func__, probe->users);
 #endif
@@ -775,6 +787,7 @@ uint32_t Probe_ifrxbytes(Probe * probe, AppServerClient * asc,
 		String const * dev)
 {
 	unsigned int i;
+	(void) asc;
 
 	for(i = 0; i < probe->ifinfo_cnt
 			&& string_compare(probe->ifinfo[i].name, dev) != 0; i++);
@@ -793,6 +806,7 @@ uint32_t Probe_iftxbytes(Probe * probe, AppServerClient * asc,
 		String const * dev)
 {
 	unsigned int i;
+	(void) asc;
 
 	for(i = 0; i < probe->ifinfo_cnt
 			&& string_compare(probe->ifinfo[i].name, dev) != 0; i++);
@@ -811,6 +825,7 @@ uint32_t Probe_voltotal(Probe * probe, AppServerClient * asc,
 		String const * volume)
 {
 	unsigned int i;
+	(void) asc;
 
 	for(i = 0; i < probe->volinfo_cnt
 			&& string_compare(probe->volinfo[i].name, volume) != 0;
@@ -830,6 +845,7 @@ uint32_t Probe_volfree(Probe * probe, AppServerClient * asc,
 		String const * volume)
 {
 	unsigned int i;
+	(void) asc;
 
 	for(i = 0; i < probe->volinfo_cnt
 			&& string_compare(probe->volinfo[i].name, volume) != 0;
