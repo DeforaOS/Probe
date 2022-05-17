@@ -39,17 +39,17 @@
 # define _sysinfo_linux			_sysinfo
 # define _userinfo_utmpx		_userinfo
 # define _ifinfo_linux			_ifinfo
-# define _volinfo_linux			_volinfo
+# define _volinfo_mtab			_volinfo
 #elif defined(__FreeBSD__)
 # define _sysinfo_generic		_sysinfo
 # define _userinfo_utmpx		_userinfo
 # define _ifinfo_bsd			_ifinfo
-# define _volinfo_linux			_volinfo
+# define _volinfo_statfs		_volinfo
 #elif defined(__NetBSD__)
 # define _sysinfo_generic		_sysinfo
 # define _userinfo_utmpx		_userinfo
 # define _ifinfo_bsd			_ifinfo
-# define _volinfo_bsd			_volinfo
+# define _volinfo_statvfs		_volinfo
 #else
 # define _sysinfo_generic		_sysinfo
 # define _userinfo_utmpx		_userinfo
@@ -475,7 +475,7 @@ struct volinfo
 };
 
 /* volinfo linux */
-#if defined(_volinfo_linux)
+#if defined(_volinfo_mtab)
 # include <sys/statvfs.h>
 enum VolInfo
 {
@@ -483,8 +483,8 @@ enum VolInfo
 };
 #define VI_LAST VI_PASS
 
-static int _volinfo_linux_append(struct volinfo ** dev, char * buf, int nb);
-static int _volinfo_linux(struct volinfo ** dev)
+static int _volinfo_mtab_append(struct volinfo ** dev, char * buf, int nb);
+static int _volinfo_mtab(struct volinfo ** dev)
 {
 	int ret = 0;
 	FILE * fp;
@@ -502,7 +502,7 @@ static int _volinfo_linux(struct volinfo ** dev)
 			ret = -1;
 			break;
 		}
-		if(_volinfo_linux_append(dev, buf, i) != 0)
+		if(_volinfo_mtab_append(dev, buf, i) != 0)
 		{
 			ret = -1;
 			break;
@@ -513,7 +513,7 @@ static int _volinfo_linux(struct volinfo ** dev)
 	return ret;
 }
 
-static int _volinfo_linux_append(struct volinfo ** dev, char * buf, int nb)
+static int _volinfo_mtab_append(struct volinfo ** dev, char * buf, int nb)
 {
 	unsigned int i;
 	unsigned int j;
@@ -544,14 +544,53 @@ static int _volinfo_linux_append(struct volinfo ** dev, char * buf, int nb)
 	p[nb].free = sv.f_bavail;
 	return 0;
 }
-#endif /* defined(_volinfo_linux) */
+#endif /* defined(_volinfo_mtab) */
 
-/* volinfo_bsd */
-#if defined(_volinfo_bsd)
-# include <sys/statvfs.h>
-static int _volinfo_bsd_append(struct volinfo ** dev, struct statvfs * buf,
+/* volinfo_statfs */
+#if defined(_volinfo_statfs)
+# include <sys/param.h>
+# include <sys/mount.h>
+static int _volinfo_statfs_append(struct volinfo ** dev, struct statfs * buf,
 		int nb);
-static int _volinfo_bsd(struct volinfo ** dev)
+static int _volinfo_statfs(struct volinfo ** dev)
+{
+	int ret;
+	struct statfs buf;
+	int cnt;
+	int cnt2;
+
+	if((cnt = statfs("/", &buf)) == -1)
+		return _probe_perror("statfs", -1);
+	if(_volinfo_statfs_append(dev, &buf[ret], 0) == 0)
+		return -1;
+	return ret;
+}
+
+static int _volinfo_statfs_append(struct volinfo ** dev, struct statfs * buf,
+		int nb)
+{
+	struct volinfo * p;
+
+	if((p = realloc(*dev, sizeof(*p) * (nb + 1))) == NULL)
+		return _probe_perror(NULL, 1);
+	*dev = p;
+	strcpy(p[nb].name, buf->f_mntonname);
+# if defined(DEBUG)
+	fprintf(stderr, "_volinfo_append: %s\n", p[nb].name);
+# endif
+	p[nb].block_size = buf->f_bsize;
+	p[nb].total = buf->f_blocks * 2048 / buf->f_bsize;
+	p[nb].free = buf->f_bavail * 2048 / buf->f_bsize;
+	return 0;
+}
+#endif /* defined(_volinfo_statvfs) */
+
+/* volinfo_statvfs */
+#if defined(_volinfo_statvfs)
+# include <sys/statvfs.h>
+static int _volinfo_statvfs_append(struct volinfo ** dev, struct statvfs * buf,
+		int nb);
+static int _volinfo_statvfs(struct volinfo ** dev)
 {
 	int ret;
 	struct statvfs * buf;
@@ -570,7 +609,7 @@ static int _volinfo_bsd(struct volinfo ** dev)
 	}
 	for(ret = 0; ret < cnt && ret < cnt2; ret++)
 	{
-		if(_volinfo_bsd_append(dev, &buf[ret], ret) == 0)
+		if(_volinfo_statvfs_append(dev, &buf[ret], ret) == 0)
 			continue;
 		ret = -1;
 		break;
@@ -579,7 +618,7 @@ static int _volinfo_bsd(struct volinfo ** dev)
 	return ret;
 }
 
-static int _volinfo_bsd_append(struct volinfo ** dev, struct statvfs * buf,
+static int _volinfo_statvfs_append(struct volinfo ** dev, struct statvfs * buf,
 		int nb)
 {
 	struct volinfo * p;
@@ -596,7 +635,7 @@ static int _volinfo_bsd_append(struct volinfo ** dev, struct statvfs * buf,
 	p[nb].free = buf->f_bavail * 2048 / buf->f_bsize;
 	return 0;
 }
-#endif /* defined(_volinfo_bsd) */
+#endif /* defined(_volinfo_statvfs) */
 
 /* volinfo generic */
 #if defined(_volinfo_generic)
