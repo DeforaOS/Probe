@@ -554,16 +554,11 @@ static int _volinfo_statfs_append(struct volinfo ** dev, struct statfs * buf,
 		int nb);
 static int _volinfo_statfs(struct volinfo ** dev)
 {
-	int ret;
 	struct statfs buf;
-	int cnt;
-	int cnt2;
 
-	if((cnt = statfs("/", &buf)) == -1)
+	if(statfs("/", &buf) != 0)
 		return _probe_perror("statfs", -1);
-	if(_volinfo_statfs_append(dev, &buf[ret], 0) == 0)
-		return -1;
-	return ret;
+	return _volinfo_statfs_append(dev, &buf, 0);
 }
 
 static int _volinfo_statfs_append(struct volinfo ** dev, struct statfs * buf,
