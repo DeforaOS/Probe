@@ -55,7 +55,7 @@ typedef struct _Host
 struct _DaMon
 {
 	char * prefix;
-	char * rrdcached;
+	String * rrdcached;
 	unsigned int refresh;
 	Host * hosts;
 	unsigned int hosts_cnt;
@@ -202,7 +202,7 @@ static int _damon_init(DaMon * damon, char const * config, Event * event)
 static int _init_config(DaMon * damon, char const * filename)
 {
 	Config * config;
-	char const * p;
+	String const * p;
 	char * q;
 	int tmp;
 
@@ -221,21 +221,21 @@ static int _init_config(DaMon * damon, char const * filename)
 		config_delete(config);
 		return -1;
 	}
-	if((p = config_get(config, "", "prefix")) == NULL)
+	if((p = config_get(config, NULL, "prefix")) == NULL)
 		p = ".";
 	if((damon->prefix = string_new(p)) == NULL)
 	{
 		config_delete(config);
 		return -1;
 	}
-	if((p = config_get(config, "", "rrdcached")) != NULL
-			&& (damon->rrdcached = strdup(p)) == NULL)
+	if((p = config_get(config, NULL, "rrdcached")) != NULL
+			&& (damon->rrdcached = string_new(p)) == NULL)
 	{
 		string_delete(damon->prefix);
 		config_delete(config);
 		return -1;
 	}
-	if((p = config_get(config, "", "refresh")) != NULL)
+	if((p = config_get(config, NULL, "refresh")) != NULL)
 	{
 		tmp = strtol(p, &q, 10);
 		damon->refresh = (*p == '\0' || *q != '\0' || tmp <= 0)
@@ -245,16 +245,16 @@ static int _init_config(DaMon * damon, char const * filename)
 				damon->refresh);
 #endif
 	}
-	if((p = config_get(config, "", "hosts")) != NULL)
+	if((p = config_get(config, NULL, "hosts")) != NULL)
 		_init_config_hosts(damon, config, p);
 	config_delete(config);
 	return 0;
 }
 
 static int _init_config_hosts(DaMon * damon, Config * config,
-		char const * hosts)
+		String const * hosts)
 {
-	char const * h = hosts;
+	String const * h = hosts;
 	unsigned int pos = 0;
 	Host * p;
 
@@ -287,16 +287,14 @@ static int _init_config_hosts(DaMon * damon, Config * config,
 static int _init_config_hosts_host(DaMon * damon, Config * config, Host * host,
 		char const * h, unsigned int pos)
 {
-	char const * p;
+	String const * p;
 
 	host->damon = damon;
 	host->appclient = NULL;
 	host->ifaces = NULL;
 	host->vols = NULL;
-	if((host->hostname = malloc(pos + 1)) == NULL)
+	if((host->hostname = string_new_length(h, pos)) == NULL)
 		return damon_perror(NULL, -errno);
-	strncpy(host->hostname, h, pos);
-	host->hostname[pos] = '\0';
 #ifdef DEBUG
 	fprintf(stderr, "config: Host %s\n", host->hostname);
 #endif
@@ -327,7 +325,7 @@ static char ** _init_config_hosts_host_comma(char const * line)
 			l++;
 			continue;
 		}
-		if((p = realloc(values, sizeof(char*) * (cnt + 2))) == NULL)
+		if((p = realloc(values, sizeof(char *) * (cnt + 2))) == NULL)
 			break;
 		values = p;
 		if((values[cnt] = malloc(pos + 1)) != NULL)
@@ -368,6 +366,6 @@ static void _damon_destroy(DaMon * damon)
 	}
 	event_delete(damon->event);
 	free(damon->hosts);
-	free(damon->rrdcached);
+	string_delete(damon->rrdcached);
 	free(damon->prefix);
 }

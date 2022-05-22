@@ -55,6 +55,7 @@ struct _DaMon
 };
 
 
+/* functions */
 /* damon_refresh */
 static AppClient * _refresh_connect(Host * host, Event * event);
 static int _refresh_uptime(AppClient * ac, Host * host, char * rrd);

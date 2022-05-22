@@ -269,10 +269,10 @@ static int _sysinfo_procs_generic(struct sysinfo * info)
 		return _probe_perror("/proc", 0);
 	while((de = readdir(dir)) != NULL)
 	{
-#ifdef DT_DIR
+#  ifdef DT_DIR
 		if(de->d_type != DT_DIR)
 			continue;
-#endif
+#  endif
 		if((l = strtol(de->d_name, NULL, 10)) <= 0)
 			continue;
 		info->procs++;
@@ -675,7 +675,7 @@ static int _probe(AppServerOptions options)
 	Event * event;
 	struct timeval tv;
 
-	memset(&probe, 0, sizeof(Probe));
+	memset(&probe, 0, sizeof(probe));
 	if(_probe_timeout(&probe) != 0)
 	{
 		free(probe.ifinfo);
