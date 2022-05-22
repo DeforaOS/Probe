@@ -45,7 +45,7 @@
 /* types */
 struct _DaMon
 {
-	char * prefix;
+	String * prefix;
 	String * rrdcached;
 	unsigned int refresh;
 	DaMonHost * hosts;
@@ -367,7 +367,7 @@ static void _damon_destroy(DaMon * damon)
 		event_delete(damon->event);
 	free(damon->hosts);
 	string_delete(damon->rrdcached);
-	free(damon->prefix);
+	string_delete(damon->prefix);
 }
 
 static void _destroy_host(DaMonHost * host)
