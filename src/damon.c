@@ -43,21 +43,12 @@
 /* DaMon */
 /* private */
 /* types */
-typedef struct _Host
-{
-	DaMon * damon;
-	AppClient * appclient;
-	char * hostname;
-	char ** ifaces;
-	char ** vols;
-} Host;
-
 struct _DaMon
 {
 	char * prefix;
 	String * rrdcached;
 	unsigned int refresh;
-	Host * hosts;
+	DaMonHost * hosts;
 	unsigned int hosts_cnt;
 	Event * event;
 };
@@ -124,6 +115,14 @@ Event * damon_get_event(DaMon * damon)
 	return damon->event;
 }
 
+/* damon_get_host_by_id */
+DaMonHost * damon_get_host_by_id(DaMon * damon, size_t id)
+{
+	if(damon->hosts_cnt >= id)
+		return NULL;
+	return &damon->hosts[id];
+}
+
 
 /* useful */
 /* damon_error */
@@ -179,9 +178,9 @@ int damon_update(DaMon * damon, RRDType type, char const * filename,
 /* damon_init */
 static int _init_config(DaMon * damon, char const * filename);
 static int _init_config_hosts(DaMon * damon, Config * config,
-		char const * hosts);
-static int _init_config_hosts_host(DaMon * damon, Config * config, Host * host,
-		char const * h, unsigned int pos);
+		String const * hosts);
+static int _init_config_hosts_host(DaMon * damon, Config * config, DaMonHost * host,
+		String const * h, unsigned int pos);
 static char ** _init_config_hosts_host_comma(char const * line);
 
 static int _damon_init(DaMon * damon, char const * config, Event * event)
@@ -256,7 +255,7 @@ static int _init_config_hosts(DaMon * damon, Config * config,
 {
 	String const * h = hosts;
 	unsigned int pos = 0;
-	Host * p;
+	DaMonHost * p;
 
 	while(h[0] != '\0')
 	{
@@ -284,8 +283,8 @@ static int _init_config_hosts(DaMon * damon, Config * config,
 	return 0;
 }
 
-static int _init_config_hosts_host(DaMon * damon, Config * config, Host * host,
-		char const * h, unsigned int pos)
+static int _init_config_hosts_host(DaMon * damon, Config * config, DaMonHost * host,
+		String const * h, unsigned int pos)
 {
 	String const * p;
 
@@ -354,18 +353,22 @@ static char ** _init_config_hosts_host_comma(char const * line)
 
 
 /* damon_destroy */
+static void _destroy_host(DaMonHost * host);
+
 static void _damon_destroy(DaMon * damon)
 {
 	unsigned int i;
 
 	for(i = 0; i < damon->hosts_cnt; i++)
-	{
-		free(damon->hosts[i].hostname);
-		if(damon->hosts[i].appclient != NULL)
-			appclient_delete(damon->hosts[i].appclient);
-	}
-	event_delete(damon->event);
+		_destroy_host(&damon->hosts[i]);
 	free(damon->hosts);
 	string_delete(damon->rrdcached);
 	free(damon->prefix);
+}
+
+static void _destroy_host(DaMonHost * host)
+{
+	string_delete(host->hostname);
+	if(host->appclient != NULL)
+		appclient_delete(host->appclient);
 }

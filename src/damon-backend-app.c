@@ -17,8 +17,6 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <System.h>
-#include <System/App.h>
 #include "rrd.h"
 #include "damon.h"
 #include "../config.h"
@@ -31,78 +29,57 @@
 # define PROGNAME_DAMON		"DaMon"
 #endif
 
-#define DAMON_SEP	'/'
-
-
-/* types */
-/* XXX duplicated from damon.c */
-typedef struct _Host
-{
-	DaMon * damon;
-	AppClient * appclient;
-	char * hostname;
-	char ** ifaces;
-	char ** vols;
-} Host;
-
-struct _DaMon
-{
-	char const * prefix;
-	unsigned int refresh;
-	Host * hosts;
-	unsigned int hosts_cnt;
-	Event * event;
-};
+#define DAMON_SEP		'/'
 
 
 /* functions */
 /* damon_refresh */
-static AppClient * _refresh_connect(Host * host, Event * event);
-static int _refresh_uptime(AppClient * ac, Host * host, char * rrd);
-static int _refresh_load(AppClient * ac, Host * host, char * rrd);
-static int _refresh_ram(AppClient * ac, Host * host, char * rrd);
-static int _refresh_swap(AppClient * ac, Host * host, char * rrd);
-static int _refresh_procs(AppClient * ac, Host * host, char * rrd);
-static int _refresh_users(AppClient * ac, Host * host, char * rrd);
-static int _refresh_ifaces(AppClient * ac, Host * host, char * rrd);
-static int _refresh_ifaces_if(AppClient * ac, Host * host, char * rrd,
+static AppClient * _refresh_connect(DaMonHost * host, Event * event);
+static int _refresh_uptime(AppClient * ac, DaMonHost * host, char * rrd);
+static int _refresh_load(AppClient * ac, DaMonHost * host, char * rrd);
+static int _refresh_ram(AppClient * ac, DaMonHost * host, char * rrd);
+static int _refresh_swap(AppClient * ac, DaMonHost * host, char * rrd);
+static int _refresh_procs(AppClient * ac, DaMonHost * host, char * rrd);
+static int _refresh_users(AppClient * ac, DaMonHost * host, char * rrd);
+static int _refresh_ifaces(AppClient * ac, DaMonHost * host, char * rrd);
+static int _refresh_ifaces_if(AppClient * ac, DaMonHost * host, char * rrd,
 		char const * iface);
-static int _refresh_vols(AppClient * ac, Host * host, char * rrd);
-static int _refresh_vols_vol(AppClient * ac, Host * host, char * rrd,
+static int _refresh_vols(AppClient * ac, DaMonHost * host, char * rrd);
+static int _refresh_vols_vol(AppClient * ac, DaMonHost * host, char * rrd,
 		char * vol);
 
 int damon_refresh(DaMon * damon)
 {
-	unsigned int i;
+	size_t i;
 	AppClient * ac = NULL;
 	char * rrd = NULL;
 	char * p;
-	Host * hosts = damon->hosts;
+	DaMonHost * host;
 
 #ifdef DEBUG
 	fprintf(stderr, "DEBUG: %s()\n", __func__);
 #endif
-	for(i = 0; i < damon->hosts_cnt; i++)
+	for(i = 0; (host = damon_get_host_by_id(damon, i)) != NULL; i++)
 	{
-		if((ac = hosts[i].appclient) == NULL)
-			if((ac = _refresh_connect(&hosts[i], damon->event))
+		if((ac = host->appclient) == NULL)
+			if((ac = _refresh_connect(host, damon_get_event(damon)))
 					== NULL)
 				continue;
-		if((p = realloc(rrd, string_get_length(hosts[i].hostname) + 12))
+		if((p = realloc(rrd, string_get_length(host->hostname) + 12))
 				== NULL) /* XXX avoid this constant */
 			break;
 		rrd = p;
-		if(_refresh_uptime(ac, &hosts[i], rrd) != 0
-				|| _refresh_load(ac, &hosts[i], rrd) != 0
-				|| _refresh_ram(ac, &hosts[i], rrd) != 0
-				|| _refresh_swap(ac, &hosts[i], rrd) != 0
-				|| _refresh_procs(ac, &hosts[i], rrd) != 0
-				|| _refresh_users(ac, &hosts[i], rrd) != 0
-				|| _refresh_ifaces(ac, &hosts[i], rrd) != 0
-				|| _refresh_vols(ac, &hosts[i], rrd) != 0)
+		if(_refresh_uptime(ac, host, rrd) != 0
+				|| _refresh_load(ac, host, rrd) != 0
+				|| _refresh_ram(ac, host, rrd) != 0
+				|| _refresh_swap(ac, host, rrd) != 0
+				|| _refresh_procs(ac, host, rrd) != 0
+				|| _refresh_users(ac, host, rrd) != 0
+				|| _refresh_ifaces(ac, host, rrd) != 0
+				|| _refresh_vols(ac, host, rrd) != 0)
 		{
 			appclient_delete(ac);
-			hosts[i].appclient = NULL;
+			host->appclient = NULL;
 			continue;
 		}
 		ac = NULL;
@@ -114,7 +91,7 @@ int damon_refresh(DaMon * damon)
 	return 0;
 }
 
-static AppClient * _refresh_connect(Host * host, Event * event)
+static AppClient * _refresh_connect(DaMonHost * host, Event * event)
 {
 	if(setenv("APPSERVER_Probe", host->hostname, 1) != 0)
 		return NULL;
@@ -124,7 +101,7 @@ static AppClient * _refresh_connect(Host * host, Event * event)
 	return host->appclient;
 }
 
-static int _refresh_uptime(AppClient * ac, Host * host, char * rrd)
+static int _refresh_uptime(AppClient * ac, DaMonHost * host, char * rrd)
 {
 	int32_t ret;
 
@@ -135,7 +112,7 @@ static int _refresh_uptime(AppClient * ac, Host * host, char * rrd)
 	return 0;
 }
 
-static int _refresh_load(AppClient * ac, Host * host, char * rrd)
+static int _refresh_load(AppClient * ac, DaMonHost * host, char * rrd)
 {
 	int32_t res;
 	uint32_t load[3];
@@ -151,7 +128,7 @@ static int _refresh_load(AppClient * ac, Host * host, char * rrd)
 	return 0;
 }
 
-static int _refresh_procs(AppClient * ac, Host * host, char * rrd)
+static int _refresh_procs(AppClient * ac, DaMonHost * host, char * rrd)
 {
 	int32_t res;
 
@@ -162,7 +139,7 @@ static int _refresh_procs(AppClient * ac, Host * host, char * rrd)
 	return 0;
 }
 
-static int _refresh_ram(AppClient * ac, Host * host, char * rrd)
+static int _refresh_ram(AppClient * ac, DaMonHost * host, char * rrd)
 {
 	int32_t res;
 	uint32_t ram[4];
@@ -176,7 +153,7 @@ static int _refresh_ram(AppClient * ac, Host * host, char * rrd)
 	return 0;
 }
 
-static int _refresh_swap(AppClient * ac, Host * host, char * rrd)
+static int _refresh_swap(AppClient * ac, DaMonHost * host, char * rrd)
 {
 	int32_t res;
 	uint32_t swap[2];
@@ -188,7 +165,7 @@ static int _refresh_swap(AppClient * ac, Host * host, char * rrd)
 	return 0;
 }
 
-static int _refresh_users(AppClient * ac, Host * host, char * rrd)
+static int _refresh_users(AppClient * ac, DaMonHost * host, char * rrd)
 {
 	int32_t res;
 
@@ -199,7 +176,7 @@ static int _refresh_users(AppClient * ac, Host * host, char * rrd)
 	return 0;
 }
 
-static int _refresh_ifaces(AppClient * ac, Host * host, char * rrd)
+static int _refresh_ifaces(AppClient * ac, DaMonHost * host, char * rrd)
 {
 	char ** p = host->ifaces;
 	int ret = 0;
@@ -211,7 +188,7 @@ static int _refresh_ifaces(AppClient * ac, Host * host, char * rrd)
 	return ret;
 }
 
-static int _refresh_ifaces_if(AppClient * ac, Host * host, char * rrd,
+static int _refresh_ifaces_if(AppClient * ac, DaMonHost * host, char * rrd,
 		char const * iface)
 {
 	int32_t res[2];
@@ -225,7 +202,7 @@ static int _refresh_ifaces_if(AppClient * ac, Host * host, char * rrd,
 	return 0;
 }
 
-static int _refresh_vols(AppClient * ac, Host * host, char * rrd)
+static int _refresh_vols(AppClient * ac, DaMonHost * host, char * rrd)
 {
 	char ** p = host->vols;
 	int ret = 0;
@@ -237,7 +214,7 @@ static int _refresh_vols(AppClient * ac, Host * host, char * rrd)
 	return ret;
 }
 
-static int _refresh_vols_vol(AppClient * ac, Host * host, char * rrd,
+static int _refresh_vols_vol(AppClient * ac, DaMonHost * host, char * rrd,
 		char * vol)
 {
 	int32_t res[2];

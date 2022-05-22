@@ -19,12 +19,22 @@
 # define DAMON_DAMON_H
 
 # include <System.h>
+# include <System/App.h>
 # include "rrd.h"
 
 
 /* DaMon */
 /* types */
 typedef struct _DaMon DaMon;
+
+typedef struct _DaMonHost
+{
+	DaMon * damon;
+	AppClient * appclient;
+	String * hostname;
+	char ** ifaces;
+	char ** vols;
+} DaMonHost;
 
 
 /* functions */
@@ -34,6 +44,8 @@ void damon_delete(DaMon * damon);
 
 /* accessors */
 Event * damon_get_event(DaMon * damon);
+
+DaMonHost * damon_get_host_by_id(DaMon * damon, size_t id);
 
 /* useful */
 int damon_error(char const * message, int error);
