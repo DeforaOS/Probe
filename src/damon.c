@@ -274,9 +274,10 @@ static int _init_config_hosts(DaMon * damon, Config * config,
 							+ 1))) == NULL)
 			return damon_perror(NULL, -errno);
 		damon->hosts = p;
-		p = &damon->hosts[damon->hosts_cnt++];
+		p = &damon->hosts[damon->hosts_cnt];
 		if(_init_config_hosts_host(damon, config, p, h, pos) != 0)
 			return -1;
+		damon->hosts_cnt++;
 		h += pos;
 		pos = 0;
 	}
