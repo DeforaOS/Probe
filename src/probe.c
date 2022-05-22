@@ -263,7 +263,7 @@ static int _sysinfo_procs_generic(struct sysinfo * info)
 
 	info->procs = 0;
 	if((dir = opendir("/proc")) == NULL)
-		return _probe_perror("/proc", -1);
+		return _probe_perror("/proc", 0);
 	while((de = readdir(dir)) != NULL)
 	{
 #ifdef DT_DIR
