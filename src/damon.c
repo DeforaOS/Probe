@@ -51,6 +51,7 @@ struct _DaMon
 	DaMonHost * hosts;
 	unsigned int hosts_cnt;
 	Event * event;
+	bool event_delete;
 };
 
 
@@ -74,12 +75,12 @@ DaMon * damon_new(char const * config)
 
 	if((event = event_new()) == NULL)
 		return NULL;
-	/* FIXME let event be deleted eventually */
 	if((damon = damon_new_event(config, event)) == NULL)
 	{
 		event_delete(event);
 		return NULL;
 	}
+	damon->event_delete = true;
 	return damon;
 }
 
@@ -190,6 +191,7 @@ static int _damon_init(DaMon * damon, char const * config, Event * event)
 	if(_init_config(damon, config) != 0)
 		return 1;
 	damon->event = event;
+	damon->event_delete = false;
 	damon_refresh(damon);
 	tv.tv_sec = damon->refresh;
 	tv.tv_usec = 0;
@@ -361,6 +363,8 @@ static void _damon_destroy(DaMon * damon)
 
 	for(i = 0; i < damon->hosts_cnt; i++)
 		_destroy_host(&damon->hosts[i]);
+	if(damon->event_delete)
+		event_delete(damon->event);
 	free(damon->hosts);
 	string_delete(damon->rrdcached);
 	free(damon->prefix);
