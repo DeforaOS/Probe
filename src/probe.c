@@ -30,8 +30,11 @@
 #include "../data/Probe.h"
 #include "../config.h"
 
+#ifndef APPSERVER_PROBE_NAME
+# define APPSERVER_PROBE_NAME	PACKAGE
+#endif
 #ifndef PROGNAME_PROBE
-# define PROGNAME_PROBE PACKAGE
+# define PROGNAME_PROBE		PACKAGE
 #endif
 
 
@@ -685,8 +688,9 @@ static int _probe(AppServerOptions options)
 		free(probe.volinfo);
 		return _probe_error(1);
 	}
-	if((appserver = appserver_new_event(&probe, options, "Probe", NULL,
-					event)) == NULL)
+	if((appserver = appserver_new_event(&probe, options,
+					APPSERVER_PROBE_NAME, NULL, event))
+			== NULL)
 	{
 		free(probe.ifinfo);
 		free(probe.volinfo);

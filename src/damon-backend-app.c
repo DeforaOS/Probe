@@ -21,10 +21,14 @@
 #include <System/App.h>
 #include "rrd.h"
 #include "damon.h"
+#include "../config.h"
 
 /* constants */
+#ifndef APPSERVER_PROBE_NAME
+# define APPSERVER_PROBE_NAME	PACKAGE
+#endif
 #ifndef PROGNAME_DAMON
-# define PROGNAME_DAMON	"DaMon"
+# define PROGNAME_DAMON		"DaMon"
 #endif
 
 #define DAMON_SEP	'/'
@@ -113,8 +117,8 @@ static AppClient * _refresh_connect(Host * host, Event * event)
 {
 	if(setenv("APPSERVER_Probe", host->hostname, 1) != 0)
 		return NULL;
-	if((host->appclient = appclient_new_event(NULL, "Probe", NULL, event))
-			== NULL)
+	if((host->appclient = appclient_new_event(NULL, APPSERVER_PROBE_NAME,
+					NULL, event)) == NULL)
 		error_print(PROGNAME_DAMON);
 	return host->appclient;
 }
